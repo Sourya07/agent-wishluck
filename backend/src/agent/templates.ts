@@ -34,9 +34,9 @@ const items = (o: any) => (o.items ?? []).map((i: any) => `${i.name}${i.size && 
 
 const en: Dict = {
   greeting: () => 'Hi! I am the Wishluck support assistant. I can help with order tracking, cancellations, returns & exchanges, refunds, sizes and our policies. How can I help?',
-  ask_verify: () => 'Sure, I can help with that. To keep your details safe, please share your order ID (for example WL10234) and the phone number used on the order.',
+  ask_verify: () => 'Sure, I can help with that. To keep your details safe, please share your order ID (it starts with WL, e.g. WL1XXXX) and the phone number used on the order.',
   ask_phone: (v) => `Thanks. Please also share the phone number used on order ${v.orderId} so I can verify it's you.`,
-  ask_order_id: () => 'Thanks. Please also share your order ID (for example WL10234).',
+  ask_order_id: () => 'Thanks. Please also share your order ID (it starts with WL, e.g. WL1XXXX).',
   verify_failed: () => "Sorry, that order ID and phone number don't match our records, so I can't share any order details. Please check both and send them again.",
   verify_locked: () => "I couldn't verify these details after several attempts. For your security I'm connecting you with our support team.",
   order_status: (v) => {
@@ -126,9 +126,9 @@ const en: Dict = {
 const hinglish: Dict = {
   ...en,
   greeting: () => 'Namaste! Main Wishluck support assistant hoon. Order tracking, cancel, return/exchange, refund, size aur policy — sab mein help kar sakta hoon. Bataiye kya madad karun?',
-  ask_verify: () => 'Zaroor! Aapki details safe rakhne ke liye, apna order ID (jaise WL10234) aur order par diya gaya phone number bhejiye.',
+  ask_verify: () => 'Zaroor! Aapki details safe rakhne ke liye, apna order ID (WL se shuru hota hai, jaise WL1XXXX) aur order par diya gaya phone number bhejiye.',
   ask_phone: (v) => `Thanks. Order ${v.orderId} par jo phone number diya tha, woh bhi bhejiye taaki verify kar sakun.`,
-  ask_order_id: () => 'Thanks. Apna order ID bhi bhejiye (jaise WL10234).',
+  ask_order_id: () => 'Thanks. Apna order ID bhi bhejiye (WL se shuru hota hai, jaise WL1XXXX).',
   verify_failed: () => 'Sorry, yeh order ID aur phone number hamare record se match nahi kar rahe, isliye main order details share nahi kar sakta. Dono dobara check karke bhejiye.',
   verify_locked: () => 'Kai baar try karne ke baad bhi verify nahi ho paya. Aapki safety ke liye main aapko hamari support team se connect kar raha hoon.',
   order_status: (v) => {
@@ -208,9 +208,9 @@ const hinglish: Dict = {
 const hi: Dict = {
   ...hinglish,
   greeting: () => 'नमस्ते! मैं Wishluck सपोर्ट असिस्टेंट हूँ। ऑर्डर ट्रैकिंग, कैंसल, रिटर्न/एक्सचेंज, रिफंड, साइज़ और पॉलिसी में मदद कर सकता हूँ। बताइए क्या मदद करूँ?',
-  ask_verify: () => 'ज़रूर! आपकी जानकारी सुरक्षित रखने के लिए अपना ऑर्डर ID (जैसे WL10234) और ऑर्डर पर दिया गया फ़ोन नंबर भेजिए।',
+  ask_verify: () => 'ज़रूर! आपकी जानकारी सुरक्षित रखने के लिए अपना ऑर्डर ID (जैसे WL1XXXX) और ऑर्डर पर दिया गया फ़ोन नंबर भेजिए।',
   ask_phone: (v) => `धन्यवाद। ऑर्डर ${v.orderId} पर दिया गया फ़ोन नंबर भी भेजिए।`,
-  ask_order_id: () => 'धन्यवाद। अपना ऑर्डर ID भी भेजिए (जैसे WL10234)।',
+  ask_order_id: () => 'धन्यवाद। अपना ऑर्डर ID भी भेजिए (जैसे WL1XXXX)।',
   verify_failed: () => 'माफ़ कीजिए, यह ऑर्डर ID और फ़ोन नंबर हमारे रिकॉर्ड से मेल नहीं खाते, इसलिए मैं कोई जानकारी साझा नहीं कर सकता। कृपया दोनों दोबारा जाँचकर भेजिए।',
   order_status: (v) => {
     const o = v.order; const t = v.tracking;

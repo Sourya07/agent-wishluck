@@ -21,8 +21,8 @@ export function extractClaims(text: string): Claim[] {
   }
   for (const m of noUrls.matchAll(/(?<!\d)([6-9]\d{9})(?!\d)/g)) push('phone', m[0], m[1]);
   for (const m of noUrls.matchAll(/\b(20\d{2})-(\d{2})-(\d{2})\b/g)) push('date', m[0], `${Number(m[3])}-${Number(m[2])}`);
-  for (const m of noUrls.matchAll(/\b(\d{1,2})(?:st|nd|rd|th)?\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?/gi)) push('date', m[0], `${Number(m[1])}-${MONTHS.indexOf(m[2].toLowerCase()) + 1}`);
-  for (const m of noUrls.matchAll(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?!\d)/gi)) push('date', m[0], `${Number(m[2])}-${MONTHS.indexOf(m[1].toLowerCase()) + 1}`);
+  for (const m of noUrls.matchAll(/\b(\d{1,2})(?:st|nd|rd|th)?\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*/gi)) push('date', m[0], `${Number(m[1])}-${MONTHS.indexOf(m[2].toLowerCase()) + 1}`);
+  for (const m of noUrls.matchAll(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+(\d{1,2})(?!\d)/gi)) push('date', m[0], `${Number(m[2])}-${MONTHS.indexOf(m[1].toLowerCase()) + 1}`);
   return claims;
 }
 

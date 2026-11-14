@@ -1,5 +1,5 @@
 /** PII masking used for logs, tool-call traces and anything that leaves the system boundary. */
-const PHONE_RE = /(?<!\d)(?:\+?91[-\s]?)?([6-9]\d{9})(?!\d)/g;
+const PHONE_RE = /(?<![A-Za-z\d])(?:\+?91[-\s]?)?([6-9]\d{9})(?!\d)/g;
 const EMAIL_RE = /([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9])[A-Za-z0-9.-]*\.([A-Za-z]{2,})/g;
 
 export function maskPhone(p?: string | null): string {

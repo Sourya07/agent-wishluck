@@ -165,21 +165,22 @@ export type Intent =
 
 const INTENTS: [Intent, RegExp][] = [
   ['bulk_order', /\b(bulk|wholesale|corporate order|100 pieces|50 pieces|reseller|b2b)\b/i],
-  ['goodwill', /\b(compensation|compensate|goodwill|voucher for (the )?(delay|trouble)|make up for|harjana)\b/i],
+  ['goodwill', /\b(compensation|compensate|goodwill|voucher for (the )?(delay|trouble)|make up for|harjana)\b|(?:₹|rs\.?|inr)?\s?\d{2,5}\s?(?:rs|rupees)?\s?(off|discount|back)\b[^.]{0,30}\b(delay|late|trouble|inconvenience)\b/i],
   ['callback', /\b(call ?back|callback|call me|phone kar|call karo)\b/i],
-  ['refund_status', /\b(refund|paisa wapas|paise wapas|money back|amount credited|refund kab)\b.*\b(status|kab|when|where|kahan|milega|aaya|received|credited|pending)\b|\b(kab|when|where)\b.*\brefund\b|\brefund status\b/i],
-  ['cancel_order', /\b(cancel|cancellation|radd|nahi chahiye order|order mat bhejo|don'?t want (the|this|my) order)\b/i],
-  ['exchange', /\b(exchange|replace|badal|badalna|badlo|change (the )?size|size change|bigger size|smaller size|(\w+ )?size (mil|chahiye|milega|available)|tight|loose|dhila|chhota|chota|bada|doesn'?t fit|does not fit|not fitting|fit nahi)\b/i],
+  ['refund_status', /\b(refund|paisa wapas|paise wapas|money back|amount credited|refund kab)\b.*\b(status|kab|when|where|kahan|milega|aaya|received|credited|pending|still|hasn'?t|has not|not (yet )?(come|received|credited)|nahi aaya|nahi mila)\b|\b(kab|when|where)\b.*\brefund\b|\brefund status\b/i],
+  ['cancel_order', /\b(cancel|cancellation|call off|radd|nahi chahiye order|order mat bhejo|don'?t want (the|this|my) order|no longer (need|needed|want)|don'?t need (it|the order|this order))\b/i],
+  ['exchange', /\b(exchange|replace|badal|badalna|badlo|change (the )?size|size change|bigger size|smaller size|wrong size|galat size|(\w+ )?size (mil|chahiye|milega|available)|for (an? )?(xxl|xl|l|m|s|\d\d) size|in (xxl|xl|l|m|s) size)\b|\b(XXL|XL|L|M|S)\s+(size\s+)?chahiye\b/],
   ['return', /\b(return|wapas|wapis|send back|refund me|money back|don'?t like|not happy with|damaged|defective|torn|phata|kharab)\b/i],
+  ['exchange', /\b(tight|loose|dhila|chhota|chota|bada|doesn'?t fit|does not fit|not fitting|fit nahi)\b/i],
   ['address_change', /\b(change|update|edit|badal|different|new)\b[^.]{0,30}\b(address|pata|location|pincode)\b|\b(deliver|bhej|send)\b[^.]{0,30}\b(office|another address|different address|dusre address|naye address)\b|\b(address|pata)\b[^.]{0,20}\b(change|badal|update|galat|wrong)\b|\b(change|update)\b[^.]{0,20}\b(phone|number|mobile)\b/i],
   ['policy_cod', /\b(cod|cash on delivery|cash on del)\b/i],
   ['size_help', /\b(which size|what size|size chart|size guide|kaunsa size|konsa size|kya size|size suggest|fit me|meri height|my height|\d\s*'\s*\d|\d+\s*kg)\b/i],
-  ['order_status', /\b(where|kahan|kab|when|status|track|tracking|ETA|deliver|delivery|aayega|ayega|aaega|pahunch|reach|arrive|shipped|dispatch)\b/i],
+  ['order_status', /\b(where|kahan|kab|when|status|track|tracking|ETA|deliver|delivery|aayega|ayega|aaega|pahunch|reach|arrive|shipped|dispatch|any update|update on|news on|kya hua)\b/i],
   ['policy_shipping', /\b(shipping|delivery charge|delivery fee|how many days|kitne din|free delivery|ship to|deliver to)\b/i],
   ['policy_return', /\b(return policy|exchange policy|refund policy|returnable|can i return)\b/i],
   ['policy_other', /\b(policy|terms|warranty)\b/i],
   ['thanks', /^(thanks|thank you|thx|ty|shukriya|dhanyavad|ok thanks|great thanks|धन्यवाद)\b/i],
-  ['greeting', /^(hi|hii+|hello|hey|namaste|namaskar|hola|good (morning|afternoon|evening)|नमस्ते)\b/i],
+  ['greeting', /^(hi|hii+|hello|hey|namaste|namaskar|hola|good (morning|afternoon|evening)|नमस्ते)\W*$/i],
 ];
 
 export function classifyIntent(text: string, ents?: Entities): Intent {
@@ -187,6 +188,7 @@ export function classifyIntent(text: string, ents?: Entities): Intent {
   const t = text.trim();
   // policy questions phrased with "can I return" etc. take precedence over action intents when no order is referenced
   if (/\b(can i|do you|kya aap|kya)\b[^.]{0,20}\b(return|exchange)\b[^.]{0,30}\b(policy|items?|sale|innerwear|days)\b/i.test(t) && !e.orderIds.length) return 'policy_return';
+  if (/\b(return|exchange|refund)s?\b[^.]{0,15}\b(window|policy|period|rules?|days)\b|\b(how many days|kitne din)\b[^.]{0,30}\b(return|exchange)\b/i.test(t) && !e.orderIds.length) return 'policy_return';
   if (/\b(cod|cash on delivery)\b/i.test(t) && (e.pincodes.length || /\b(milega|available|deliver|in|mein|me)\b/i.test(t)) && !e.orderIds.length) return 'policy_cod';
   for (const [intent, re] of INTENTS) if (re.test(t)) return intent;
   if (e.orderIds.length || e.phones.length) return 'provide_details';

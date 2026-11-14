@@ -39,7 +39,7 @@ const HOUSE_RE = /\b(h\.?\s?no\.?|house|flat|plot|door|room|apt|apartment|block|
 export function assessAddress(a: RiskInput['address']): AddressQuality {
   const main = [a.line1, a.line2].filter(Boolean).join(', ').trim();
   const all = [main, a.landmark].filter(Boolean).join(', ').toLowerCase();
-  const withoutPin = main.replace(/\b\d{6}\b/g, '');
+  const withoutPin = main.replace(/\b\d{6}\b/g, '').replace(/\b(gali|lane|street|road|sector)\s*(no\.?|number)?\s*\d{1,3}\b/gi, ''); // lane/sector numbers are not a house number
   const hasHouseNumber = HOUSE_RE.test(withoutPin);
   const vagueTerms = VAGUE_TERMS.filter((t) => new RegExp(`(^|[^a-z])${t.replace('.', '\\.')}([^a-z]|$)`, 'i').test(all));
   const tooShort = main.replace(/[^a-z0-9]/gi, '').length < 15;

@@ -16,7 +16,7 @@ export interface AddOpts { delayMs?: number; key?: string; attempts?: number }
 export interface JobQueue {
   driver: 'bullmq' | 'sqlite';
   add(type: string, data: unknown, opts?: AddOpts): Promise<boolean>;
-  start(handlers: Record<string, JobHandler>): void;
+  start(handlers: Record<string, JobHandler>, opts?: { poll?: boolean }): void;
   stop(): Promise<void>;
   /** For tests/eval: run every job that is due now (sqlite driver). */
   drain?(opts?: { includeDelayed?: boolean; types?: string[] }): Promise<number>;
@@ -36,9 +36,9 @@ class SqliteQueue implements JobQueue {
     return r.changes > 0;
   }
 
-  start(handlers: Record<string, JobHandler>) {
+  start(handlers: Record<string, JobHandler>, opts: { poll?: boolean } = {}) {
     this.handlers = handlers;
-    this.timer = setInterval(() => void this.tick(), 400);
+    if (opts.poll !== false) this.timer = setInterval(() => void this.tick(), 400);
   }
 
   private async runJob(j: any) {

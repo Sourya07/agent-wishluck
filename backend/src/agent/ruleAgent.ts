@@ -36,6 +36,9 @@ export async function ruleAgent(ctx: TurnCtx, text: string, ents: Entities, inte
   if ((intent === 'provide_details' || intent === 'unknown') && ctx.conv.pending_intent && ctx.conv.verified_orders.length) {
     intent = ctx.conv.pending_intent.intent as Intent;
     workingText = `${ctx.conv.pending_intent.text} ${text}`;
+  } else if (intent === 'provide_details' && ents.orderIds.length) {
+    // "what about WL10237?" — treat a bare order id as a status question
+    intent = 'order_status';
   }
   const merged: Entities = intent === intent0 ? ents : { ...ents, ...mergeEnts(ents, ctx.conv.pending_intent?.text) };
 

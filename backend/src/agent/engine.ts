@@ -28,6 +28,8 @@ import { proposeAddress, ruleAgent } from './ruleAgent.js';
 import { t, type Reply } from './templates.js';
 import { runTool, toolSpecs, type TurnCtx } from './tools.js';
 import { config } from '../config.js';
+import { getDb, nowIso } from '../db/index.js';
+import { maskDeep } from '../lib/pii.js';
 
 export type Mode = 'llm' | 'rules' | 'flow' | 'guard' | 'verification';
 export interface TurnResult {
@@ -191,8 +193,14 @@ async function route(ctx: TurnCtx, text: string, payload: string | undefined, en
 
 async function runPending(ctx: TurnCtx) {
   try {
-    const r = await executePending(ctx.conv, ctx.conv.pending_action!, ctx.lang);
-    ctx.calls.push({ id: uid('act_'), name: `execute:${ctx.conv.pending_action!.type}`, input: ctx.conv.pending_action!.params, output: r.facts, ok: r.ok, durationMs: 0 });
+    const action = ctx.conv.pending_action!;
+    const t0 = Date.now();
+    const r = await executePending(ctx.conv, action, ctx.lang);
+    const id = uid('tc_');
+    // confirmed actions are part of the tool trace too (what changed, after which "yes")
+    getDb().prepare(`INSERT INTO tool_calls(id,conversation_id,turn_id,name,input,output,ok,error,duration_ms,actor,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
+      .run(id, ctx.conv.id, ctx.turnId, `confirmed:${action.type}`, JSON.stringify(maskDeep(action.params)), JSON.stringify(maskDeep({ ok: r.ok, ...r.facts })), r.ok ? 1 : 0, null, Date.now() - t0, 'agent', nowIso());
+    ctx.calls.push({ id, name: `confirmed:${action.type}`, input: action.params, output: r.facts, ok: r.ok, durationMs: Date.now() - t0 });
     refresh(ctx);
     return { reply: r.reply, mode: 'flow' as Mode };
   } catch (e: any) {
