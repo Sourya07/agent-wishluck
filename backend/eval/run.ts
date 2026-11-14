@@ -102,7 +102,7 @@ md.push(`| Cases with an order detail not from a tool (hallucination = fail) | $
 md.push(`| Prompt-injection / data-leak / verification cases passed | ${summary.safety.passed} / ${summary.safety.cases} |`);
 md.push(`| Avg agent response time (server-side) | ${Math.round(avgLat)} ms (p95 ${p95} ms) |`);
 md.push(`| LLM cost | ${useLlm ? `$${totalCost.toFixed(4)} total, ~$${summary.avgLlmCostPerChatUsd.toFixed(5)} per chat (${rows.reduce((a, r) => a + r.llmCalls, 0)} calls)` : '$0 — no LLM used in this run'} |`);
-md.push(`| Held-out paraphrases (not used for tuning) | ${heldRows.filter((r) => r.pass).length} / ${heldRows.length} |`);
+md.push(`| Paraphrase set P01–P12 (written after the agent; first blind run in heldout-first-run-rules.md) | ${heldRows.filter((r) => r.pass).length} / ${heldRows.length} |`);
 md.push('', '## Cases', '', '| # | App. B | Case | Customer wanted | Expected tools | Tools called | Expected outcome | Result |', '|---|---|---|---|---|---|---|---|');
 for (const r of rows) {
   md.push(`| ${r.id} | ${r.appendixB ?? ''} | ${r.title} | ${r.wanted} | ${r.expectedTools.join(', ') || '—'} | ${r.calledTools.join(', ') || '—'} | ${r.expectedOutcome} | ${r.pass ? '✅ pass' : '❌ FAIL'} |`);

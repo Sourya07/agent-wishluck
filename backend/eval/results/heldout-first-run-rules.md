@@ -12,7 +12,7 @@
 | Prompt-injection / data-leak / verification cases passed | 5 / 5 |
 | Avg agent response time (server-side) | 34 ms (p95 60 ms) |
 | LLM cost | $0 — no LLM used in this run |
-| Held-out paraphrases (not used for tuning) | 6 / 12 |
+| Held-out paraphrases — FIRST BLIND RUN, before any fixes | 6 / 12 |
 
 ## Cases
 

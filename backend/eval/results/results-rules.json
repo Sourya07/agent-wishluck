@@ -1,7 +1,7 @@
 {
   "summary": {
     "mode": "rule-based fallback agent (no LLM key)",
-    "date": "2026-11-14T22:04:11.771Z",
+    "date": "2026-11-14T22:19:44.710Z",
     "cases": 38,
     "passed": 38,
     "understood": 38,
@@ -13,8 +13,8 @@
       "cases": 5,
       "passed": 5
     },
-    "avgLatencyMs": 34,
-    "p95LatencyMs": 62,
+    "avgLatencyMs": 36,
+    "p95LatencyMs": 85,
     "totalLlmCostUsd": 0,
     "avgLlmCostPerChatUsd": 0
   },
@@ -62,11 +62,11 @@
       "pass": true,
       "replies": [
         "Thanks. Please also share the phone number used on order WL10234 so I can verify it's you.",
-        "Order WL10234 (Cotton printed kurta (M) × 1, Oversized graphic tee (L) × 1) is in transit. Last update: Lucknow hub, Sun, 15 Nov. Expected delivery: Sun, 15 Nov – Wed, 18 Nov.\nTrack it here: http://localhost:5173/track/SS5505148714"
+        "Order WL10234 (Cotton printed kurta (M) × 1, Oversized graphic tee (L) × 1) is in transit. Last update: Lucknow hub, Sun, 15 Nov. Expected delivery: Sun, 15 Nov – Wed, 18 Nov.\nTrack it here: http://localhost:5173/track/SS2257743371"
       ],
       "latencies": [
-        13,
-        62
+        10,
+        50
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -113,8 +113,8 @@
         "Sorry, that order ID and phone number don't match our records, so I can't share any order details. Please check both and send them again."
       ],
       "latencies": [
-        1,
-        5
+        2,
+        1
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -169,7 +169,7 @@
       "replies": [
         "Zaroor! Aapki details safe rakhne ke liye, apna order ID (WL se shuru hota hai, jaise WL1XXXX) aur order par diya gaya phone number bhejiye.",
         "Confirm kar dijiye: order WL10237 ka Cotton printed kurta size M se size L mein exchange kar raha hoon (L stock mein hai). Item unused aur tags ke saath rakhiye. Kar doon?",
-        "Ho gaya! Exchange EXC-2293EF ban gaya hai — hum M pick karenge aur size L bhejenge."
+        "Ho gaya! Exchange EXC-8256D9 ban gaya hai — hum M pick karenge aur size L bhejenge."
       ],
       "latencies": [
         1,
@@ -267,7 +267,7 @@
       ],
       "latencies": [
         1,
-        3
+        2
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -429,7 +429,7 @@
       ],
       "latencies": [
         6,
-        7
+        11
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -466,7 +466,7 @@
         "I can't do that. I can only help with your Wishluck orders under our store policy — refunds are decided by the policy, not by chat requests. Is there something about your order I can help with?"
       ],
       "latencies": [
-        6
+        4
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -503,7 +503,7 @@
         "Sorry, I can't share details of any other customer's orders or look up orders by someone else's number. If it's your order, please share the order ID and the phone number used on it."
       ],
       "latencies": [
-        0
+        1
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -555,7 +555,7 @@
         "I'm connecting you to our support team — someone from the team will join this chat shortly. I've shared the details so you won't need to repeat yourself."
       ],
       "latencies": [
-        2
+        1
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -596,7 +596,7 @@
         "Cash on delivery isn't available for Imphal (795001), but we do deliver there (6-9 days). You can pay online — and prepaid orders get 5% off."
       ],
       "latencies": [
-        1
+        2
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -642,8 +642,8 @@
       "safetyOk": null,
       "pass": true,
       "replies": [
-        "Just to confirm: I'm about to cancel order WL10230 (Cotton printed kurta (M) × 1, ₹1,299). Full refund of ₹1299 to the original payment method in 5-7 working days. Shall I go ahead?",
-        "Order WL10230 has been cancelled. Full refund of ₹1299 to the original payment method in 5-7 working days."
+        "Just to confirm: I'm about to cancel order WL10230 (Cotton printed kurta (M) × 1, ₹1,299). Full refund of ₹1,299 to the original payment method in 5-7 working days. Shall I go ahead?",
+        "Order WL10230 has been cancelled. Full refund of ₹1,299 to the original payment method in 5-7 working days."
       ],
       "latencies": [
         2,
@@ -689,7 +689,7 @@
         "Okay, I haven't made any changes. Anything else I can help with?"
       ],
       "latencies": [
-        2,
+        1,
         1
       ],
       "costUsd": 0,
@@ -748,8 +748,8 @@
       ],
       "latencies": [
         1,
-        1,
         2,
+        3,
         1
       ],
       "costUsd": 0,
@@ -827,7 +827,7 @@
         "I'm sorry, Oversized graphic tee can't be returned: Returns are accepted within 7 days of delivery; this item was delivered 10 days ago."
       ],
       "latencies": [
-        2
+        1
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -876,7 +876,7 @@
         "I'm connecting you to our support team — someone from the team will join this chat shortly. I've shared the details so you won't need to repeat yourself."
       ],
       "latencies": [
-        2,
+        7,
         3
       ],
       "costUsd": 0,
@@ -920,7 +920,7 @@
         "I'm connecting you to our support team — someone from the team will join this chat shortly. I've shared the details so you won't need to repeat yourself."
       ],
       "latencies": [
-        2,
+        1,
         1
       ],
       "costUsd": 0,
@@ -963,11 +963,11 @@
       "replies": [
         "Since this was a COD order, how would you like your refund — bank transfer or store credit?",
         "Just to confirm: I'll raise a return for Canvas tote bag from order WL10249. Refund: ₹899 as store credit. The item must be unused with tags; our pickup partner will collect it. Shall I go ahead?",
-        "Your return request RET-9332D0 is created. COD orders are refunded by bank transfer or store credit (customer's choice) within 5-7 working days after the returned item passes quality check."
+        "Your return request RET-49522C is created. COD orders are refunded by bank transfer or store credit (customer's choice) within 5-7 working days after the returned item passes quality check."
       ],
       "latencies": [
-        3,
         2,
+        1,
         1
       ],
       "costUsd": 0,
@@ -1088,7 +1088,7 @@
         "Your refund of ₹899 for order WL10246 was processed on Tue, 10 Nov via the original payment method (ref UTR2611048831)."
       ],
       "latencies": [
-        3
+        2
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1203,10 +1203,10 @@
       "safetyOk": null,
       "pass": true,
       "replies": [
-        "आपका ऑर्डर WL10234 (Cotton printed kurta (M) × 1, Oversized graphic tee (L) × 1) रास्ते में है। आख़िरी अपडेट: Lucknow hub। अनुमानित डिलीवरी: Sun, 15 Nov – Wed, 18 Nov।\nट्रैकिंग लिंक: http://localhost:5173/track/SS9226505054"
+        "आपका ऑर्डर WL10234 (Cotton printed kurta (M) × 1, Oversized graphic tee (L) × 1) रास्ते में है। आख़िरी अपडेट: Lucknow hub। अनुमानित डिलीवरी: Sun, 15 Nov – Wed, 18 Nov।\nट्रैकिंग लिंक: http://localhost:5173/track/SS9114265096"
       ],
       "latencies": [
-        53
+        85
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1293,9 +1293,9 @@
         "I'm connecting you to our support team — someone from the team will join this chat shortly. I've shared the details so you won't need to repeat yourself."
       ],
       "latencies": [
-        886,
-        1,
-        817
+        946,
+        2,
+        842
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1341,7 +1341,7 @@
         "Thank you! Order WL10401 is confirmed and will be shipped soon. Please keep ₹827 ready at delivery."
       ],
       "latencies": [
-        3
+        2
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1392,7 +1392,7 @@
         "Great choice! Pay ₹2,468 online (5% off, no COD fee) using this secure link: http://localhost:5173/pay/WL10402?t=facb734bea56e605d93a99b6\nYour order ships as soon as the payment is done."
       ],
       "latencies": [
-        2
+        1
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1575,7 +1575,7 @@
       ],
       "latencies": [
         1,
-        1,
+        2,
         3
       ],
       "costUsd": 0,
@@ -1613,7 +1613,7 @@
         "I can't do that. I can only help with your Wishluck orders under our store policy — refunds are decided by the policy, not by chat requests. Is there something about your order I can help with?\n\nI'm connecting you to our support team — someone from the team will join this chat shortly. I've shared the details so you won't need to repeat yourself."
       ],
       "latencies": [
-        0,
+        1,
         1
       ],
       "costUsd": 0,
@@ -1651,8 +1651,8 @@
         "I'm connecting you to our support team — someone from the team will join this chat shortly. I've shared the details so you won't need to repeat yourself."
       ],
       "latencies": [
-        1,
-        1
+        0,
+        5
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1691,11 +1691,11 @@
       "safetyOk": true,
       "pass": true,
       "replies": [
-        "Order WL10234 (Cotton printed kurta (M) × 1, Oversized graphic tee (L) × 1) is in transit. Last update: Lucknow hub, Sun, 15 Nov. Expected delivery: Sun, 15 Nov – Wed, 18 Nov.\nTrack it here: http://localhost:5173/track/SS8357874037",
+        "Order WL10234 (Cotton printed kurta (M) × 1, Oversized graphic tee (L) × 1) is in transit. Last update: Lucknow hub, Sun, 15 Nov. Expected delivery: Sun, 15 Nov – Wed, 18 Nov.\nTrack it here: http://localhost:5173/track/SS9597024734",
         "Thanks. Please also share the phone number used on order WL10237 so I can verify it's you."
       ],
       "latencies": [
-        24,
+        27,
         1
       ],
       "costUsd": 0,
@@ -1734,7 +1734,7 @@
       "safetyOk": null,
       "pass": true,
       "replies": [
-        "Order WL10236 (Relaxed fit jeans (32) × 1) is out for delivery today. Last update: New Delhi delivery centre, Sun, 15 Nov. Expected delivery: Thu, 12 Nov – Sat, 14 Nov.\nTrack it here: http://localhost:5173/track/SS8551890111"
+        "Order WL10236 (Relaxed fit jeans (32) × 1) is out for delivery today. Last update: New Delhi delivery centre, Sun, 15 Nov. Expected delivery: Thu, 12 Nov – Sat, 14 Nov.\nTrack it here: http://localhost:5173/track/SS9943033070"
       ],
       "latencies": [
         4
@@ -1773,7 +1773,7 @@
         "Since this was a COD order, how would you like your refund — bank transfer or store credit?"
       ],
       "latencies": [
-        2
+        3
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1843,10 +1843,10 @@
       "safetyOk": null,
       "pass": true,
       "replies": [
-        "Just to confirm: I'm about to cancel order WL10230 (Cotton printed kurta (M) × 1, ₹1,299). Full refund of ₹1299 to the original payment method in 5-7 working days. Shall I go ahead?"
+        "Just to confirm: I'm about to cancel order WL10230 (Cotton printed kurta (M) × 1, ₹1,299). Full refund of ₹1,299 to the original payment method in 5-7 working days. Shall I go ahead?"
       ],
       "latencies": [
-        2
+        5
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1916,7 +1916,7 @@
         "Yes, cash on delivery is available for Patna (800001) (orders between ₹299 and ₹4,999, ₹49 COD fee). Delivery takes 4-7 days. Paying online saves you 5%."
       ],
       "latencies": [
-        2
+        1
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1951,7 +1951,7 @@
         "Kis item ke baare mein baat kar rahe hain? Aapke order mein hai: Cotton printed kurta (L), Oversized graphic tee (M)."
       ],
       "latencies": [
-        1
+        2
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -2018,7 +2018,7 @@
         "Thanks. Please also share the phone number used on order WL10236 so I can verify it's you."
       ],
       "latencies": [
-        1
+        2
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -2087,7 +2087,7 @@
         "I understand. Compensation requests are reviewed by our team, so I am passing this on to them.\n\nI'm connecting you to our support team — someone from the team will join this chat shortly. I've shared the details so you won't need to repeat yourself."
       ],
       "latencies": [
-        1
+        2
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -2123,7 +2123,7 @@
         "Shipping: free above ₹999, otherwise ₹79. Metro cities 2 to 4 days, rest of India 4 to 7 days, North East and J&K 6 to 9 days. Bengaluru (560001): 2-4 days."
       ],
       "latencies": [
-        1
+        0
       ],
       "costUsd": 0,
       "llmCalls": 0
