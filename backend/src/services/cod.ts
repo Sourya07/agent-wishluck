@@ -122,7 +122,7 @@ export const paymentLink = (orderId: string) => `${config.frontendUrl}/pay/${ord
 export function paymentInfo(orderId: string, token: string) {
   const o = getOrder(orderId);
   if (!o || token !== payToken(orderId)) return null;
-  return { orderId: o.id, name: o.name, items: o.items, payment_method: o.payment_method, status: o.status, cod_total: o.total, ...prepaidQuote(o) };
+  return { orderId: o.id, name: o.name, items: o.items, payment_method: o.payment_method, status: o.status, cod_total: o.total, shipping_fee: o.shipping_fee, cod_fee: o.cod_fee, existing_discount: o.discount, ...prepaidQuote(o) };
 }
 
 /** Dummy payment gateway success → convert the COD order to prepaid with 5% off and no COD fee. */

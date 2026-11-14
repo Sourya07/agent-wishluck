@@ -7,7 +7,7 @@
 import { getDb, nowIso } from '../db/index.js';
 import { publish } from '../lib/events.js';
 import { shortId } from '../lib/ids.js';
-import { maskPhone } from '../lib/pii.js';
+import { maskPhone, maskText } from '../lib/pii.js';
 import { log } from '../lib/logger.js';
 import { inr } from '../lib/time.js';
 import { getSettings } from '../settings.js';
@@ -48,7 +48,7 @@ function templateSummary(conv: Conversation, code: HandoverCode, reason: string,
   const lines = [
     `${who} — ${HANDOVER_LABELS[code]}: ${reason}`,
     order ? `Order ${order.id}: ${order.status.replace(/_/g, ' ')}, ${order.payment_method.toUpperCase()}, ${inr(order.total)} (${order.items.map((i) => `${i.name}${i.size ? ' ' + i.size : ''}`).join(', ')}).${topics.length ? ` Topics: ${topics.join(', ')}.` : ''}` : `No verified order yet.${topics.length ? ` Topics: ${topics.join(', ')}.` : ''}`,
-    `Last message (${mood}): "${last.slice(0, 160)}"`,
+    `Last message (${mood}): "${maskText(last).slice(0, 160)}"`,
   ];
   const name = (conv.customer_name ?? '').split(' ')[0] || 'there';
   const oid = order ? ` regarding order ${order.id}` : '';

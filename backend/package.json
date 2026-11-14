@@ -9,7 +9,8 @@
     "seed": "tsx src/scripts/seed.ts",
     "test": "vitest run",
     "eval": "tsx eval/run.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "demo": "tsx src/scripts/demo.ts"
   },
   "keywords": [],
   "author": "",

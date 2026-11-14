@@ -41,9 +41,12 @@ function dashboardAuth(req: Request, res: Response, next: NextFunction) {
   res.status(401).json({ error: 'dashboard token required' });
 }
 
+let lastIssued = 0;
+/** Test orders are processed asynchronously, so remember ids we've handed out but not stored yet. */
 function nextOrderId() {
   const r = getDb().prepare(`SELECT MAX(CAST(substr(id,3) AS INTEGER)) n FROM orders WHERE id LIKE 'WL1%'`).get() as { n: number | null };
-  return `WL${Math.max(10300, (r.n ?? 10300) + 1)}`;
+  lastIssued = Math.max(10300, (r.n ?? 0) + 1, lastIssued + 1);
+  return `WL${lastIssued}`;
 }
 
 const PRESETS: Record<string, any> = {

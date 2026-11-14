@@ -35,7 +35,7 @@ describe('returns', () => {
   it('sends refunds above ₹1,500 to manual review', () => {
     const d = evaluateReturn({ ...base, order: delivered(2), item: item('WL-JNS-03', { size: '32' }), product: productBySku('WL-JNS-03')! });
     expect(d.outcome).toBe('manual_review');
-    expect(d.manualReviewReasons?.[0]).toMatch(/1799/);
+    expect(d.manualReviewReasons?.[0]).toMatch(/1,799/);
   });
   it('sends damage claims without photo and 3+ returns in 60 days to manual review', () => {
     expect(evaluateReturn({ ...base, order: delivered(2), item: item('WL-TEE-02'), product: productBySku('WL-TEE-02')!, isDamageClaim: true, hasPhoto: false }).outcome).toBe('manual_review');

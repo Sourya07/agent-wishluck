@@ -46,6 +46,7 @@ export interface Decision {
 }
 
 const DAY = 86_400_000;
+const rs = (n: number): string => `₹${Math.round(n).toLocaleString('en-IN')}`;
 export const daysSince = (iso: string | null | undefined, now: number) =>
   iso ? Math.floor((now - new Date(iso).getTime()) / DAY) : Infinity;
 
@@ -88,7 +89,7 @@ export function evaluateReturn(input: ReturnInput): Decision {
   const refundAmount = item.price * item.qty;
   const rm = refundMethods(order);
   const review: string[] = [];
-  if (refundAmount > limit) review.push(`Refund amount ₹${refundAmount} is above ₹${limit}.`);
+  if (refundAmount > limit) review.push(`Refund amount ${rs(refundAmount)} is above ${rs(limit)}.`);
   if (isDamageClaim && !hasPhoto) review.push('Damage claim without a photo.');
   if (returnsLast60Days >= POLICY.manualReview.returnsIn60Days) review.push(`Customer has ${returnsLast60Days} returns in the last 60 days.`);
 
@@ -140,7 +141,7 @@ export function evaluateCancellation(order: OrderLike): Decision {
       reasons: ['The order has not shipped yet, so it can be cancelled free of charge.'],
       alternatives: [],
       refundAmount: order.payment_method === 'prepaid' ? order.total : 0,
-      refundTimeline: order.payment_method === 'prepaid' ? `Full refund of ₹${order.total} to the original payment method in ${POLICY.refundWorkingDays[0]}-${POLICY.refundWorkingDays[1]} working days.` : 'Nothing was paid (COD), so there is no refund to process.',
+      refundTimeline: order.payment_method === 'prepaid' ? `Full refund of ${rs(order.total)} to the original payment method in ${POLICY.refundWorkingDays[0]}-${POLICY.refundWorkingDays[1]} working days.` : 'Nothing was paid (COD), so there is no refund to process.',
     };
   }
   if (IN_FLIGHT.includes(s)) {
@@ -151,7 +152,7 @@ export function evaluateCancellation(order: OrderLike): Decision {
       alternatives: ['refuse_delivery', 'return_after_delivery'],
       refundAmount: refused,
       refundTimeline: order.payment_method === 'prepaid'
-        ? `If you refuse the delivery, you get ₹${refused} back (order total minus ₹${POLICY.refuseDeliveryShippingDeduction} shipping) after the parcel returns to us. Or accept it and raise a return within ${POLICY.returnWindowDays} days of delivery (where the item is returnable).`
+        ? `If you refuse the delivery, you get ${rs(refused)} back (order total minus ${rs(POLICY.refuseDeliveryShippingDeduction)} shipping) after the parcel returns to us. Or accept it and raise a return within ${POLICY.returnWindowDays} days of delivery (where the item is returnable).`
         : `You can refuse the parcel at the door (nothing to pay on COD), or accept it and raise a return within ${POLICY.returnWindowDays} days of delivery (where the item is returnable).`,
     };
   }
@@ -172,7 +173,7 @@ export function evaluateCod(orderValue: number, pin: PincodeInfo | null) {
   const reasons: string[] = [];
   if (!pin || !pin.serviceable) reasons.push(pin ? `We do not deliver to ${pin.pincode}.` : 'Invalid pincode.');
   else if (!pin.cod) reasons.push(`Cash on delivery is not available for pincode ${pin.pincode}.`);
-  if (orderValue < POLICY.cod.min || orderValue > POLICY.cod.max) reasons.push(`COD is available for orders between ₹${POLICY.cod.min} and ₹${POLICY.cod.max}.`);
+  if (orderValue < POLICY.cod.min || orderValue > POLICY.cod.max) reasons.push(`COD is available for orders between ${rs(POLICY.cod.min)} and ${rs(POLICY.cod.max)}.`);
   return { allowed: reasons.length === 0, codFee: POLICY.cod.fee, prepaidDiscountPct: POLICY.cod.prepaidDiscountPct, reasons };
 }
 

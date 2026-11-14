@@ -114,6 +114,8 @@ async function route(ctx: TurnCtx, text: string, payload: string | undefined, en
   }
   const leak = detectDataLeak(text, ents, ctx.conv.verified_phone);
   if (leak) return { reply: { text: t(lang, 'data_leak') }, mode: 'guard' as Mode };
+  // Verify early (order id + phone in the message) so even a handover ticket carries the order context.
+  const v = await verifyFromEntities(ctx, ents);
   const trig = detectHandoverTrigger(text, getSettings().handover);
   if (trig) { ctx.handover = trig; return { reply: { text: '' }, mode: 'guard' as Mode }; }
 
@@ -172,8 +174,7 @@ async function route(ctx: TurnCtx, text: string, payload: string | undefined, en
     if (r.error === 'TOOL_UNAVAILABLE') return flow({ text: t(lang, 'tool_down') });
   }
 
-  // ---------------------------------------------------------------- F. verification in code
-  const v = await verifyFromEntities(ctx, ents);
+  // ---------------------------------------------------------------- F. verification result (computed above)
   if (v === 'failed') return { reply: { text: t(lang, 'verify_failed') }, mode: 'verification' as Mode };
   if (v === 'locked') { ctx.handover = { code: 'verification_failed', reason: 'Order ID / phone did not match after repeated attempts.' }; return { reply: { text: t(lang, 'verify_locked') }, mode: 'verification' as Mode }; }
 
