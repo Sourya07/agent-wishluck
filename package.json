@@ -1,0 +1,15 @@
+{
+  "name": "wishluck-order-ops-agent",
+  "private": true,
+  "description": "AI order-ops & customer support agent for an Indian D2C store (COD confirmation, NDR follow-up, returns, handover).",
+  "scripts": {
+    "setup": "npm --prefix backend install && npm --prefix frontend install && cp -n .env.example backend/.env || true",
+    "dev": "node scripts/dev.mjs",
+    "seed": "npm --prefix backend run seed",
+    "demo": "npm --prefix backend run demo",
+    "test": "npm --prefix backend test",
+    "eval": "npm --prefix backend run eval",
+    "build": "npm --prefix frontend run build",
+    "start": "npm --prefix frontend run build && cd backend && FRONTEND_URL=http://localhost:4000 npx tsx src/index.ts"
+  }
+}

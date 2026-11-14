@@ -1,0 +1,23 @@
+# One command: `docker compose up --build` → http://localhost:4000
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, timeout: 3s, retries: 10 }
+
+  app:
+    build: .
+    depends_on: { redis: { condition: service_healthy } }
+    ports: ["4000:4000"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      REDIS_URL: redis://redis:6379          # BullMQ queue
+      PUBLIC_URL: http://localhost:4000
+      FRONTEND_URL: http://localhost:4000    # tracking / payment links in messages
+    volumes: ["wishluck-data:/data"]
+    restart: unless-stopped
+
+volumes:
+  wishluck-data:

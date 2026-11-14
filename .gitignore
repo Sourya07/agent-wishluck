@@ -6,5 +6,4 @@ data/
 .env
 .env.local
 coverage/
-eval/results/*.json
 .DS_Store
