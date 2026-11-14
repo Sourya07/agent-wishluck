@@ -1,0 +1,10 @@
+node_modules/
+dist/
+data/
+*.db
+*.db-*
+.env
+.env.local
+coverage/
+eval/results/*.json
+.DS_Store
