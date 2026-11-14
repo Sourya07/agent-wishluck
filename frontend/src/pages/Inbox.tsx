@@ -125,9 +125,8 @@ function Thread({ id, onToggleSide }: { id: string; onToggleSide: () => void }) 
             </div>
           </div>
           <div className="row" style={{ gap: 6, flex: 'none' }}>
-            <ConvStatus s={c.status} />
             {c.status === 'ai' || c.status === 'needs_human' ? <button className="btn sm primary" disabled={!!busy} onClick={() => act('takeover')}><IHand /> Take over</button> : null}
-            {c.status === 'human' || c.status === 'needs_human' ? <button className="btn sm" disabled={!!busy} onClick={() => act('handback')} title="Hand back to AI"><IBot /> Hand back</button> : null}
+            {c.status === 'human' || c.status === 'needs_human' ? <button className="btn sm" disabled={!!busy} onClick={() => act('handback')} title="Hand the chat back to the AI assistant"><IBot /> Back to AI</button> : null}
             {c.status !== 'resolved' && <button className="btn sm" disabled={!!busy} onClick={() => act('resolve')}>Resolve</button>}
             <button className="btn ghost icon-btn sm only-narrow" onClick={onToggleSide} aria-label="Details"><IPanel /></button>
           </div>
