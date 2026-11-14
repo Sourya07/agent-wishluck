@@ -18,7 +18,7 @@ An AI agent for an Indian D2C fashion store that **chats with customers (English
 
 ## 1. Run it
 
-### Local (Node 20+)
+### Local (Node 22.13+)
 
 ```bash
 npm run setup          # installs backend + frontend, copies .env.example → backend/.env
@@ -74,7 +74,7 @@ docker compose up --build  # app + Redis (BullMQ) → http://localhost:4000
 | WL10244 | — | RTO started (customer has 2 past refusals) |
 | WL10231 / WL10232 / WL10251 | — | COD unshipped: low risk / high risk / on hold |
 
-30 orders in total, covering every state in Appendix A. Pincode `795001` (Imphal) and `190001` (Srinagar) are serviceable but non-COD; `744101` is not serviceable.
+31 orders in total, covering every state in Appendix A. Pincode `795001` (Imphal) and `190001` (Srinagar) are serviceable but non-COD; `744101` is not serviceable.
 
 ---
 
@@ -121,7 +121,7 @@ frontend/src/       pages/ (Inbox, Orders, Analytics, Settings, Store, ChatPage,
 | Choice | Why |
 |---|---|
 | **Express + TypeScript (run with `tsx`)** | Small surface, raw-body access for HMAC is trivial, no build step to get wrong while evaluating. |
-| **SQLite (better-sqlite3)** | Zero setup for reviewers, real transactions + unique constraints (used for idempotency), synchronous API keeps the agent code simple. Swapping to Postgres is a repository-layer change. |
+| **SQLite via Node's built-in `node:sqlite`** | Zero setup and no native addon to compile (Node ≥ 22.13 prints a one-line ExperimentalWarning — harmless), real transactions + unique constraints (used for idempotency), synchronous API keeps the agent code simple. Swapping to Postgres is a repository-layer change. |
 | **BullMQ *and* a SQLite queue** | Brief asks for BullMQ-like queueing; Docker uses BullMQ + Redis. Without Redis the same interface (delays, retries with backoff, de-dup keys) runs on a `jobs` table so `npm run dev` needs nothing installed. Tests drain the SQLite queue deterministically. |
 | **SSE, not WebSockets** | Traffic is server → browser only (new messages, status changes); SSE reconnects by itself and works through proxies. |
 | **zod** | One schema per tool gives runtime validation of model arguments *and* the JSON schema sent to the LLM. |

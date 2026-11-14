@@ -1,4 +1,5 @@
-import Database from 'better-sqlite3';
+// node:sqlite is built into Node ≥ 22.13 (prints a one-time ExperimentalWarning — harmless).
+import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 import path from 'node:path';
 import { config } from '../config.js';
@@ -137,13 +138,54 @@ CREATE TABLE IF NOT EXISTS courier_shipments (
 );
 `;
 
-let db: Database.Database | null = null;
+/**
+ * Thin wrapper over Node's built-in `node:sqlite` (no native addon to compile) exposing the small
+ * better-sqlite3-style surface the app uses: prepare().run/get/all, exec, pragma, transaction.
+ */
+export interface Stmt { run(...a: any[]): { changes: number | bigint; lastInsertRowid: number | bigint }; get(...a: any[]): any; all(...a: any[]): any[] }
+export interface Db { prepare(sql: string): Stmt; exec(sql: string): void; pragma(p: string): void; transaction<T extends (...a: any[]) => any>(fn: T): T }
 
-export function getDb(): Database.Database {
+let db: Db | null = null;
+
+function wrap(raw: DatabaseSync): Db {
+  const cache = new Map<string, Stmt>();
+  let depth = 0;
+  return {
+    prepare(sql) {
+      let st = cache.get(sql);
+      if (!st) {
+        const s = raw.prepare(sql);
+        // node:sqlite rejects `undefined`; better-sqlite3 code paths pass null for "no value"
+        const fix = (a: any[]) => a.map((v) => (v === undefined ? null : typeof v === 'boolean' ? (v ? 1 : 0) : v));
+        st = {
+          run: (...a) => s.run(...fix(a)) as any,
+          get: (...a) => { const r = s.get(...fix(a)); return r ? { ...r } : undefined; },
+          all: (...a) => s.all(...fix(a)).map((r: any) => ({ ...r })),
+        };
+        cache.set(sql, st);
+      }
+      return st;
+    },
+    exec: (sql) => raw.exec(sql),
+    pragma: (p) => raw.exec(`PRAGMA ${p}`),
+    transaction(fn) {
+      return ((...args: any[]) => {
+        if (depth > 0) return fn(...args); // nested: join the outer transaction
+        depth++;
+        raw.exec('BEGIN');
+        try { const r = fn(...args); raw.exec('COMMIT'); return r; }
+        catch (e) { raw.exec('ROLLBACK'); throw e; }
+        finally { depth--; }
+      }) as any;
+    },
+  };
+}
+
+export function getDb(): Db {
   if (db) return db;
   if (config.dbPath !== ':memory:') fs.mkdirSync(path.dirname(config.dbPath), { recursive: true });
-  db = new Database(config.dbPath);
-  db.pragma('journal_mode = WAL');
+  db = wrap(new DatabaseSync(config.dbPath));
+  if (config.dbPath !== ':memory:') db.pragma('journal_mode = WAL');
   db.pragma('busy_timeout = 5000');
   db.exec(SCHEMA);
   return db;
