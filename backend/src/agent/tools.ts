@@ -10,7 +10,7 @@
 import { z } from 'zod';
 import { getDb, nowIso } from '../db/index.js';
 import { uid } from '../lib/ids.js';
-import { maskDeep, normalizePhone } from '../lib/pii.js';
+import { maskDeep, maskText, normalizePhone } from '../lib/pii.js';
 import { fmtDate, inr } from '../lib/time.js';
 import { log } from '../lib/logger.js';
 import { PRODUCTS, productBySku } from '../policy/catalog.js';
@@ -25,7 +25,7 @@ import { confirmCod, paymentLink, shortAddress } from '../services/cod.js';
 import { allowedNdrDates, ndrApply, ndrDateButtons, rtoRefundIfRefused } from '../services/ndr.js';
 import { createCallbackTicket, type HandoverCode } from './handover.js';
 import { statusLabel, t, yesNo, type Button } from './templates.js';
-import type { Lang } from './nlu.js';
+import { CITY_PINCODES, extractCity, extractEntities, type Lang } from './nlu.js';
 
 export class ToolUnavailable extends Error {}
 
@@ -69,12 +69,30 @@ export function orderView(o: Order) {
     delivery_city: o.city, delivery_pincode: o.pincode, awb: o.awb, courier: o.courier,
     tracking_url: o.awb ? courier.trackingUrl(o.awb) : null,
     failed_delivery: o.ndr_attempts > 0 ? { attempts: o.ndr_attempts, last_reason: o.ndr_reason, status: o.ndr_status } : null,
+    // Policy decisions computed in code, so the model never has to reason about eligibility itself.
+    policy_now: (() => {
+      const c = evaluateCancellation(o);
+      const addr = evaluateAddressChange(o, pincodeInfo(o.pincode));
+      return {
+        cancellation: { allowed: c.allowed, why: c.reasons.join(' '), options_if_not: c.alternatives, money: c.refundTimeline ?? null },
+        address_change: { allowed: addr.allowed || addr.code === 'COD_NOT_AVAILABLE', why: addr.allowed ? 'Order not dispatched yet — the address can be changed (new pincode is checked when given).' : addr.reasons.join(' ') },
+        return_or_exchange_window: o.delivered_at ? (daysSince(o.delivered_at, Date.now()) <= POLICY.returnWindowDays ? `open (delivered ${daysSince(o.delivered_at, Date.now())} day(s) ago, 7-day window) — item rules still apply, use the return/exchange tools` : 'closed (more than 7 days since delivery)') : 'not delivered yet',
+      };
+    })(),
   };
+}
+
+/** Map "kurta", "the briefs", "sale tee", "WL-KUR-01" → SKU. */
+function skuFrom(text?: string) {
+  if (!text) return undefined;
+  if (productBySku(text)) return text.toUpperCase();
+  return extractEntities(text).product ?? PRODUCTS.find((p) => p.name.toLowerCase().includes(text.toLowerCase()))?.sku;
 }
 
 function resolveItem(o: Order, sku?: string, itemId?: string): { item: OrderItem } | { error: any } {
   let it = itemId ? o.items.find((i) => i.id === itemId) : undefined;
-  if (!it && sku) it = o.items.find((i) => i.sku === sku.toUpperCase());
+  const want = skuFrom(sku);
+  if (!it && want) it = o.items.find((i) => i.sku === want) ?? (want === 'WL-TEE-02' ? o.items.find((i) => i.sku === 'WL-SAL-06') : undefined);
   if (!it && o.items.length === 1) it = o.items[0];
   if (!it) return { error: { ok: false, error: 'WHICH_ITEM', message: 'Ask the customer which item.', items: o.items.map((i) => ({ item_id: i.id, sku: i.sku, name: i.name, size: i.size })) } };
   return { item: it };
@@ -154,11 +172,12 @@ const tools: ToolDef[] = [
   {
     name: 'check_return_options',
     description: 'Policy decision (computed in code) for returning or exchanging an item of a verified order. Use this before offering anything.',
-    schema: z.object({ order_id: ORDER_ID, sku: z.string().optional(), request_type: z.enum(['return', 'exchange']), new_size: z.string().optional(), damage_claim: z.boolean().optional(), has_photo: z.boolean().optional() }),
+    schema: z.object({ order_id: ORDER_ID, sku: z.string().optional().describe('SKU or product name, e.g. "kurta"'), request_type: z.enum(['return', 'exchange']), new_size: z.string().optional(), damage_claim: z.boolean().optional(), has_photo: z.boolean().optional() }),
     run: (ctx, a) => {
       const r = access(ctx, a.order_id); if ('error' in r) return r.error;
       const o = r.order;
-      const targets = a.sku ? o.items.filter((i) => i.sku === a.sku.toUpperCase()) : o.items;
+      const want = skuFrom(a.sku);
+      const targets = want ? o.items.filter((i) => i.sku === want || (want === 'WL-TEE-02' && i.sku === 'WL-SAL-06')) : o.items;
       if (!targets.length) return { ok: false, error: 'ITEM_NOT_IN_ORDER', items: o.items.map((i) => i.sku) };
       const ret60 = returnsLast60Days(o.phone);
       return {
@@ -168,7 +187,10 @@ const tools: ToolDef[] = [
           const d = a.request_type === 'exchange'
             ? evaluateExchange({ order: o, item, product, newSize: a.new_size ?? '', stockQty: a.new_size ? getStock(item.sku, a.new_size) : 1, returnsLast60Days: ret60, hasActiveRequest: activeRequestForItem(item.id) })
             : evaluateReturn({ order: o, item, product, returnsLast60Days: ret60, hasActiveRequest: activeRequestForItem(item.id), isDamageClaim: a.damage_claim, hasPhoto: a.has_photo, refundLimit: getSettings().handover.refundLimit });
-          return { item_id: item.id, sku: item.sku, name: item.name, size: item.size, ...d, ...(a.request_type === 'exchange' && !a.new_size && d.code !== 'INVALID_SIZE' ? { note: 'new_size not given — ask which size; stock not checked yet', sizes: product.sizes } : {}) };
+          const next = d.allowed
+            ? `Eligible. If the customer asked for this, call ${a.request_type === 'exchange' ? 'create_exchange_request' : 'create_return_request'} NOW (it shows the confirmation question itself) — do not ask the customer whether to proceed first.`
+            : 'Not eligible — explain the reasons and offer the alternatives listed, if any.';
+          return { item_id: item.id, sku: item.sku, name: item.name, size: item.size, ...d, next_step: next, ...(a.request_type === 'exchange' && !a.new_size && d.code !== 'INVALID_SIZE' ? { note: 'new_size not given — ask which size; stock not checked yet', sizes: product.sizes } : {}) };
         }),
       };
     },
@@ -189,7 +211,7 @@ const tools: ToolDef[] = [
   {
     name: 'create_exchange_request',
     description: 'Prepare a size exchange for an item in a verified order. Checks policy + stock and returns a confirmation question. Executes only after the customer says yes.',
-    schema: z.object({ order_id: ORDER_ID, sku: z.string().optional(), item_id: z.string().optional(), new_size: z.string().min(1), reason: z.string().max(200).optional() }),
+    schema: z.object({ order_id: ORDER_ID, sku: z.string().optional().describe('SKU or product name, e.g. "kurta"'), item_id: z.string().optional(), new_size: z.string().min(1), reason: z.string().max(200).optional() }),
     run: (ctx, a) => {
       const r = access(ctx, a.order_id); if ('error' in r) return r.error;
       const ri = resolveItem(r.order, a.sku, a.item_id); if ('error' in ri) return ri.error;
@@ -197,13 +219,13 @@ const tools: ToolDef[] = [
       const newSize = String(a.new_size).toUpperCase();
       const d = evaluateExchange({ order: r.order, item, product, newSize, stockQty: getStock(item.sku, newSize), returnsLast60Days: returnsLast60Days(r.order.phone), hasActiveRequest: activeRequestForItem(item.id) });
       if (!d.allowed) return { ok: true, eligible: false, decision: d };
-      return { ...propose(ctx, 'create_exchange', { orderId: r.order.id, itemId: item.id, newSize, reason: a.reason }, t(ctx.lang, 'exchange_q', { item: item.name, from: item.size, to: newSize, orderId: r.order.id })), eligible: true, decision: d };
+      return { ...propose(ctx, 'create_exchange', { orderId: r.order.id, itemId: item.id, newSize, reason: a.reason && maskText(a.reason) }, t(ctx.lang, 'exchange_q', { item: item.name, from: item.size, to: newSize, orderId: r.order.id })), eligible: true, decision: d };
     },
   },
   {
     name: 'create_return_request',
     description: 'Prepare a return (refund) for an item of a verified order. Policy decides eligibility. COD orders need refund_method (bank_transfer or store_credit). Executes only after the customer says yes.',
-    schema: z.object({ order_id: ORDER_ID, sku: z.string().optional(), item_id: z.string().optional(), reason: z.string().max(200).optional(), refund_method: z.enum(['bank_transfer', 'store_credit', 'original_payment_method']).optional(), damage_claim: z.boolean().optional(), has_photo: z.boolean().optional() }),
+    schema: z.object({ order_id: ORDER_ID, sku: z.string().optional().describe('SKU or product name, e.g. "briefs"'), item_id: z.string().optional(), reason: z.string().max(200).optional(), refund_method: z.enum(['bank_transfer', 'store_credit', 'original_payment_method']).optional(), damage_claim: z.boolean().optional(), has_photo: z.boolean().optional() }),
     run: (ctx, a) => {
       const r = access(ctx, a.order_id); if ('error' in r) return r.error;
       const ri = resolveItem(r.order, a.sku, a.item_id); if ('error' in ri) return ri.error;
@@ -211,6 +233,12 @@ const tools: ToolDef[] = [
       const d = evaluateReturn({ order: r.order, item, product, returnsLast60Days: returnsLast60Days(r.order.phone), hasActiveRequest: activeRequestForItem(item.id), isDamageClaim: a.damage_claim, hasPhoto: a.has_photo, refundLimit: getSettings().handover.refundLimit });
       if (!d.allowed) return { ok: true, eligible: false, decision: d };
       let method = a.refund_method;
+      // For COD the customer must choose — ignore a method the model picked unless the customer actually said it.
+      if (r.order.payment_method === 'cod' && method) {
+        const said = getDb().prepare(`SELECT content FROM messages WHERE conversation_id=? AND role='customer' ORDER BY created_at DESC LIMIT 6`).all(ctx.conv.id).map((m: any) => m.content).join(' ').toLowerCase();
+        const chose = method === 'bank_transfer' ? /bank|transfer|account|neft|imps|upi/.test(said) : method === 'store_credit' ? /store|credit|wallet|voucher/.test(said) : false;
+        if (!chose) method = undefined;
+      }
       if (r.order.payment_method === 'prepaid') method = 'original_payment_method';
       else if (!method || method === 'original_payment_method') {
         ctx.buttons = [{ id: 'refund_method:bank_transfer', label: t(ctx.lang, 'b_bank') }, { id: 'refund_method:store_credit', label: t(ctx.lang, 'b_credit') }];
@@ -222,7 +250,7 @@ const tools: ToolDef[] = [
       const q = d.outcome === 'manual_review'
         ? t(ctx.lang, 'return_review_q', { item: item.name, amount: d.refundAmount })
         : t(ctx.lang, 'return_q', { item: item.name, orderId: r.order.id, amount: d.refundAmount, methodText });
-      return { ...propose(ctx, 'create_return', { orderId: r.order.id, itemId: item.id, reason: a.reason, refundMethod: method, damageClaim: a.damage_claim, hasPhoto: a.has_photo }, q), eligible: true, decision: d };
+      return { ...propose(ctx, 'create_return', { orderId: r.order.id, itemId: item.id, reason: a.reason && maskText(a.reason), refundMethod: method, damageClaim: a.damage_claim, hasPhoto: a.has_photo }, q), eligible: true, decision: d };
     },
   },
   {
@@ -233,15 +261,20 @@ const tools: ToolDef[] = [
       const r = access(ctx, a.order_id); if ('error' in r) return r.error;
       const d = evaluateCancellation(r.order);
       if (!d.allowed) return { ok: true, cancellable: false, decision: d };
-      return { ...propose(ctx, 'cancel_order', { orderId: r.order.id, reason: a.reason ?? 'customer request' }, t(ctx.lang, 'cancel_q', { order: r.order, refundNote: d.refundTimeline })), cancellable: true, decision: d };
+      return { ...propose(ctx, 'cancel_order', { orderId: r.order.id, reason: maskText(a.reason ?? 'customer request') }, t(ctx.lang, 'cancel_q', { order: r.order, refundNote: d.refundTimeline })), cancellable: true, decision: d };
     },
   },
   {
     name: 'change_delivery_address',
-    description: 'Change the delivery address of a verified order (only before dispatch; pincode must be serviceable, and COD-enabled for COD orders). Executes only after the customer says yes.',
-    schema: z.object({ order_id: ORDER_ID, address_line1: z.string().min(8).max(250), landmark: z.string().max(120).optional(), city: z.string().max(60).optional(), pincode: PINCODE }),
+    description: 'Change the delivery address of a verified order (only before dispatch; pincode must be serviceable, and COD-enabled for COD orders). Call it as soon as the customer asks — even before you have the new address — to learn whether a change is possible. Executes only after the customer says yes.',
+    schema: z.object({ order_id: ORDER_ID, address_line1: z.string().min(8).max(250).optional(), landmark: z.string().max(120).optional(), city: z.string().max(60).optional(), pincode: PINCODE.optional() }),
     run: (ctx, a) => {
       const r = access(ctx, a.order_id); if ('error' in r) return r.error;
+      if (!a.address_line1 || !a.pincode) {
+        const pre = evaluateAddressChange(r.order, pincodeInfo(r.order.pincode));
+        if (!pre.allowed && pre.code !== 'COD_NOT_AVAILABLE') return { ok: true, allowed: false, decision: pre };
+        return { ok: true, allowed: 'pending_new_address', needs: ['address_line1', 'pincode'], message: 'A change is possible (not dispatched yet). Ask for the full new address with house/flat number and the 6-digit pincode.' };
+      }
       const d = evaluateAddressChange(r.order, pincodeInfo(a.pincode));
       if (!d.allowed) return { ok: true, allowed: false, decision: d };
       const full = [a.address_line1, a.landmark, a.city].filter(Boolean).join(', ');
@@ -250,10 +283,13 @@ const tools: ToolDef[] = [
   },
   {
     name: 'check_pincode',
-    description: 'Serviceability, COD availability and delivery time for a pincode (policy-based).',
-    schema: z.object({ pincode: PINCODE, order_value: z.number().optional() }),
+    description: 'Serviceability, COD availability and delivery time for a pincode or a city name (policy-based).',
+    schema: z.object({ pincode: PINCODE.optional(), city: z.string().max(60).optional(), order_value: z.number().optional() }),
     run: (_ctx, a) => {
-      const p = pincodeInfo(a.pincode);
+      const city = a.city ? extractCity(a.city) : undefined;
+      const pin = a.pincode ?? (city ? CITY_PINCODES[city] : undefined);
+      if (!pin) return { ok: false, error: 'UNKNOWN_CITY', message: 'City not in our list — ask the customer for the 6-digit pincode.' };
+      const p = pincodeInfo(pin);
       if (!p) return { ok: false, error: 'INVALID_PINCODE' };
       const days = POLICY.eta[p.zone];
       const cod = evaluateCod(a.order_value ?? 1000, p);
@@ -279,9 +315,9 @@ const tools: ToolDef[] = [
   {
     name: 'size_recommendation',
     description: 'Recommend a size from the size chart given height (cm) and/or weight (kg). 5\'8" = 173 cm.',
-    schema: z.object({ sku: z.string(), height_cm: z.number().min(120).max(220).optional(), weight_kg: z.number().min(30).max(200).optional() }),
+    schema: z.object({ sku: z.string().optional().describe('SKU or product name; omit for kurtas/tees'), height_cm: z.number().min(120).max(220).optional(), weight_kg: z.number().min(30).max(200).optional() }),
     run: (_ctx, a) => {
-      const p = productBySku(a.sku);
+      const p = productBySku(skuFrom(a.sku) ?? 'WL-KUR-01');
       if (!p) return { ok: false, error: 'UNKNOWN_SKU', skus: PRODUCTS.map((x) => x.sku) };
       const r = recommendSize(p.sku, a.height_cm, a.weight_kg);
       return { ok: true, product: p.name, ...r, recommended_in_stock: r.recommended ? getStock(p.sku, r.recommended) > 0 : null };
@@ -387,7 +423,7 @@ export async function runTool(ctx: TurnCtx, name: string, rawArgs: unknown, acto
         if (e instanceof ToolUnavailable) {
           ctx.toolFailures++;
           updateConversation(ctx.conv.id, { tool_failures: ctx.conv.tool_failures + 1 } as any); refresh(ctx);
-          output = { ok: false, error: 'TOOL_UNAVAILABLE', message: "Live data couldn't be fetched. Tell the customer you couldn't fetch the details and offer a callback (request_callback). Do not guess." };
+          output = { ok: false, error: 'TOOL_UNAVAILABLE', message: "Live data couldn't be fetched. Tell the customer you couldn't fetch the live details right now and ASK whether they'd like a callback. Call request_callback only after they say yes. Do not guess." };
         } else {
           output = { ok: false, error: 'INTERNAL_ERROR', message: 'Something went wrong running this tool.' };
         }

@@ -17,7 +17,7 @@ export interface LlmResult { content: string | null; toolCalls: ToolCall[]; usag
 /** USD per 1M tokens [input, output]. Override with LLM_PRICE_IN / LLM_PRICE_OUT. */
 const PRICES: [RegExp, number, number][] = [
   [/gpt-4o-mini/, 0.15, 0.6], [/gpt-4\.1-mini/, 0.4, 1.6], [/gpt-4\.1-nano/, 0.1, 0.4], [/gpt-4o/, 2.5, 10], [/gpt-4\.1/, 2, 8], [/gpt-5-mini/, 0.25, 2], [/gpt-5/, 1.25, 10],
-  [/haiku/, 0.8, 4], [/sonnet/, 3, 15], [/opus/, 15, 75],
+  [/claude-3-5-haiku|claude-3-haiku/, 0.8, 4], [/haiku/, 1, 5], [/sonnet/, 3, 15], [/opus-4-[5-9]|opus-5/, 5, 25], [/opus/, 15, 75],
   [/gemini-2\.0-flash-lite/, 0.075, 0.3], [/gemini-2\.[05]-flash/, 0.1, 0.4], [/gemini.*pro/, 1.25, 10],
   [/llama-3\.3-70b/, 0.59, 0.79], [/llama-3\.1-8b/, 0.05, 0.08], [/qwen|llama|mistral/, 0, 0],
 ];
@@ -81,11 +81,17 @@ async function anthropicChat(messages: ChatMsg[], tools: ToolSpec[], opts: { tem
       else out.push({ role: 'user', content: m.content ?? '' });
     }
   }
-  const data = await fetchJson<any>(`${config.llm.baseUrl.replace(/\/$/, '')}/messages`, {
+  const body: any = { model: config.llm.model, max_tokens: opts.maxTokens, system, messages: out, tools: tools.map((t) => ({ name: t.name, description: t.description, input_schema: t.parameters })) };
+  if (!noTemperature.has(config.llm.model)) body.temperature = opts.temperature;
+  const send = () => fetchJson<any>(`${config.llm.baseUrl.replace(/\/$/, '')}/messages`, {
     method: 'POST', timeoutMs: config.llm.timeoutMs, retries: config.llm.maxRetries, label: 'llm.anthropic',
-    headers: { 'x-api-key': config.llm.apiKey, 'anthropic-version': '2023-06-01' },
-    body: { model: config.llm.model, max_tokens: opts.maxTokens, temperature: opts.temperature, system, messages: out, tools: tools.map((t) => ({ name: t.name, description: t.description, input_schema: t.parameters })) },
+    headers: { 'x-api-key': config.llm.apiKey, 'anthropic-version': '2023-06-01' }, body,
   });
+  let data: any;
+  try { data = await send(); } catch (e: any) {
+    // Newer models reject `temperature` — drop it and remember for this model.
+    if (e?.status === 400 && /temperature/i.test(JSON.stringify(e.body ?? ''))) { noTemperature.add(config.llm.model); delete body.temperature; data = await send(); } else throw e;
+  }
   const blocks: any[] = data.content ?? [];
   return {
     content: blocks.filter((b) => b.type === 'text').map((b) => b.text).join('\n') || null,
@@ -95,6 +101,7 @@ async function anthropicChat(messages: ChatMsg[], tools: ToolSpec[], opts: { tem
   };
 }
 
+const noTemperature = new Set<string>();
 const safeParse = (s: string) => { try { return JSON.parse(s || '{}'); } catch { return {}; } };
 
 export async function chat(p: { messages: ChatMsg[]; tools?: ToolSpec[]; temperature?: number; maxTokens?: number; json?: boolean; conversationId?: string | null; purpose?: string }): Promise<LlmResult> {

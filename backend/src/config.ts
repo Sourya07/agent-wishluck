@@ -9,7 +9,7 @@ const provider = (process.env.LLM_PROVIDER || 'none').toLowerCase() as LlmProvid
 
 const defaultModels: Record<LlmProvider, string> = {
   openai: 'gpt-4o-mini',
-  anthropic: 'claude-3-5-haiku-latest',
+  anthropic: 'claude-haiku-4-5-20251001',
   gemini: 'gemini-2.0-flash',
   groq: 'llama-3.3-70b-versatile',
   openrouter: 'openai/gpt-4o-mini',

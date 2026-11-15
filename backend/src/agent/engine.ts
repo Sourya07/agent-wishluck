@@ -303,6 +303,18 @@ async function llmTurn(ctx: TurnCtx, _text: string, _intent: Intent) {
   const state = stateBlock(ctx.conv, ctx.lang);
   const messages: ChatMsg[] = [{ role: 'system', content: systemPrompt() }, { role: 'system', content: state }, ...history(ctx.conv)];
   const specs = toolSpecs();
+  // Code-first for the two requests models most often "answer" without calling the tool (cancel, address change):
+  // when the order is verified, run the eligibility tool ourselves and hand the model the result.
+  const orderId = ctx.conv.context_order_id ?? ctx.conv.verified_orders[ctx.conv.verified_orders.length - 1];
+  if (orderId && ctx.conv.verified_orders.includes(orderId) && (_intent === 'cancel_order' || _intent === 'address_change')) {
+    const ents = extractEntities(_text);
+    const args: any = { order_id: orderId };
+    if (_intent === 'cancel_order') args.reason = _text.slice(0, 150);
+    else if (ents.pincodes[0] && _text.length > 25) { args.address_line1 = _text.slice(0, 250); args.pincode = ents.pincodes[0]; }
+    const out = await runTool(ctx, _intent === 'cancel_order' ? 'cancel_order' : 'change_delivery_address', args, 'system');
+    messages.push({ role: 'system', content: `The system already ran ${_intent === 'cancel_order' ? 'cancel_order' : 'change_delivery_address'} for ${orderId} because the customer asked for it. Result: ${JSON.stringify(out).slice(0, 3000)}\nRelay this to the customer in their language (if a confirmation_question is present, ask exactly that). Do not call the same tool again unless the customer gives new details.` });
+    refresh(ctx);
+  }
   let final: string | null = null;
   for (let round = 0; round < config.llm.maxToolRounds; round++) {
     const r = await chat({ messages, tools: specs, conversationId: ctx.conv.id, purpose: 'agent' });
@@ -324,6 +336,7 @@ async function llmTurn(ctx: TurnCtx, _text: string, _intent: Intent) {
     ctx.buttons = ctx.buttons ?? [];
   }
   if (!final) final = ctx.handover ? '' : t(ctx.lang, 'clarify');
+  final = final.replace(/\*\*(.+?)\*\*/g, '$1').replace(/__(.+?)__/g, '$1').replace(/^#+\s*/gm, '').trim(); // chat surfaces are plain text
 
   // ---- grounding check
   let grounding: TurnResult['grounding'] = { checked: false, violations: [], rewritten: false, stripped: false };
