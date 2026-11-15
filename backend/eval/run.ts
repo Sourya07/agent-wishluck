@@ -4,6 +4,7 @@
  *   npm run eval -- --rules      → force rule-based agent
  *   npm run eval -- --only B03   → run a single case
  */
+import 'dotenv/config'; // so LLM_PROVIDER / LLM_API_KEY in backend/.env are picked up
 import fs from 'node:fs';
 import path from 'node:path';
 import { bootHarness } from './harness.js';

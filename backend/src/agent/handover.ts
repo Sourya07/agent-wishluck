@@ -64,7 +64,7 @@ function templateSummary(conv: Conversation, code: HandoverCode, reason: string,
 }
 
 async function llmSummary(conv: Conversation, code: HandoverCode, reason: string, order: ReturnType<typeof getOrder>) {
-  const transcript = getMessages(conv.id).slice(-14).map((m) => `${m.role.toUpperCase()}: ${m.content}`).join('\n');
+  const transcript = getMessages(conv.id).slice(-14).map((m) => `${m.role.toUpperCase()}: ${maskText(m.content)}`).join('\n');
   const orderCtx = order ? JSON.stringify({ id: order.id, status: order.status, payment: order.payment_method, total: order.total, items: order.items.map((i) => ({ name: i.name, size: i.size, price: i.price })), ndr_attempts: order.ndr_attempts }) : 'none';
   const r = await chat({
     conversationId: conv.id, purpose: 'handover_summary', json: true, maxTokens: 400, temperature: 0.2,
@@ -75,7 +75,7 @@ async function llmSummary(conv: Conversation, code: HandoverCode, reason: string
   });
   const j = JSON.parse((r.content ?? '{}').replace(/^```json\s*|```$/g, ''));
   if (!j.summary || !j.suggested_reply) throw new Error('bad summary json');
-  return { summary: String(j.summary), suggestedReply: String(j.suggested_reply), mood: j.mood as Mood | undefined };
+  return { summary: maskText(String(j.summary)), suggestedReply: maskText(String(j.suggested_reply)), mood: j.mood as Mood | undefined };
 }
 
 export async function handover(conversationId: string, p: { code: HandoverCode; reason: string; orderId?: string | null; notify?: boolean; lang?: Lang }): Promise<{ reply: Reply; ticketId: string | null }> {

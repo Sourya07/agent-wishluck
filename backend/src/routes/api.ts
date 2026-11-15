@@ -238,7 +238,7 @@ export function apiRouter() {
     const out = await courier.event(o.awb!, b);
     res.json({ ok: true, awb: o.awb, event: (out as any).event });
   }));
-  d.post('/test/reset', wrap(async (_req, res) => { const r = seed({ reset: true }); res.json({ ok: true, ...r }); }));
+  d.post('/test/reset', wrap(async (_req, res) => { const r = seed({ reset: true }); lastIssued = 0; res.json({ ok: true, ...r }); }));
   d.post('/test/run-jobs', wrap(async (_req, res) => { const n = (await getQueue().drain?.({ includeDelayed: true })) ?? 0; res.json({ ok: true, ran: n }); }));
 
   d.get('/meta', (_req, res) => res.json({ courierStatuses: COURIER_STATUSES, ndrReasons: NDR_REASONS, presets: Object.keys(PRESETS), products: PRODUCTS, handoverLabels: HANDOVER_LABELS }));
