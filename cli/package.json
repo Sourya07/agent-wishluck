@@ -1,0 +1,39 @@
+{
+  "name": "wishluck-ops",
+  "version": "1.0.0",
+  "description": "Terminal client for the Wishluck order-ops & support agent: chat as a customer, work the support inbox, create test orders, fire courier events, watch live.",
+  "type": "module",
+  "bin": {
+    "wl": "dist/wl.js",
+    "wishluck-ops": "dist/wl.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p .",
+    "dev": "tsx src/wl.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": {
+    "node": ">=18.17"
+  },
+  "keywords": [
+    "cli",
+    "customer-support",
+    "ecommerce",
+    "cod",
+    "d2c",
+    "ai-agent",
+    "shopify"
+  ],
+  "license": "MIT",
+  "author": "Souryavardhan Singh",
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

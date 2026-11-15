@@ -46,6 +46,33 @@ docker compose up --build  # app + Redis (BullMQ) → http://localhost:4000
 
 > I could not pull images from Docker Hub in my build sandbox, so the Dockerfile/compose file was written carefully but **not executed** by me. The local `npm` path above is the one I tested.
 
+### From the terminal — `wl`
+
+Everything the dashboard does is also available from a terminal client in `cli/` (zero dependencies, published as **`wishluck-ops`** on npm once you run `npm publish` — see below). With the server running:
+
+```bash
+npm run wl -- help                       # or, after `npm i -g wishluck-ops`:  wl help
+npm run wl -- chat                       # chat as a customer; type 1-9 to tap the bot's buttons
+npm run wl -- inbox                      # conversations, handovers first
+npm run wl -- show <id> --tools          # transcript + every tool call + ticket
+npm run wl -- reply <id> --suggested     # answer as the support team, then: wl handback <id>
+npm run wl -- new-order high_risk --dup  # signed webhook, sent twice → duplicate ignored
+npm run wl -- courier WL10236 delivery_failed --reason "Customer not available"
+npm run wl -- watch                      # live feed of messages, handovers, order changes
+npm run wl -- stats                      # analytics summary
+npm run wl -- settings --fast            # demo timings; or: settings risk.highThreshold=55
+```
+
+Point it at another server with `WL_URL=https://… wl inbox`. Full command list: [`cli/README.md`](cli/README.md).
+
+**Publishing the CLI to npm** (needs your npm account — the name `wishluck-ops` was free when this was written):
+
+```bash
+cd cli
+npm login                 # once
+npm publish               # builds dist/ first (prepublishOnly), ships 4 files / ~13 kB
+```
+
 ### Useful commands
 
 | Command | What it does |
@@ -53,6 +80,7 @@ docker compose up --build  # app + Redis (BullMQ) → http://localhost:4000
 | `npm test` | 61 unit/integration tests (policy, risk score, webhook duplicates, guards, LLM loop against a mock provider) |
 | `npm run eval` | Runs 50 scripted conversations/events through the real app and writes `backend/eval/results/report-*.md` |
 | `npm run seed` | Re-seeds Appendix A data (also available as *Settings → Reset demo data*) |
+| `npm run wl -- <command>` | Terminal client (see above) |
 
 ### Sample data to try (all made up)
 
@@ -114,6 +142,7 @@ backend/
   tests/            vitest
   eval/             cases.ts · run.ts · results/
 frontend/src/       pages/ (Inbox, Orders, Analytics, Settings, Store, ChatPage, Track, Pay) · components/
+cli/src/wl.ts       terminal client (npm package `wishluck-ops`, commands `wl` / `wishluck-ops`)
 ```
 
 ### Why these choices
