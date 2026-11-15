@@ -1,7 +1,7 @@
 {
   "summary": {
     "mode": "rule-based fallback agent (no LLM key)",
-    "date": "2026-11-14T22:20:45.919Z",
+    "date": "2026-11-15T06:09:47.949Z",
     "cases": 38,
     "passed": 38,
     "understood": 38,
@@ -13,8 +13,8 @@
       "cases": 5,
       "passed": 5
     },
-    "avgLatencyMs": 33,
-    "p95LatencyMs": 51,
+    "avgLatencyMs": 34,
+    "p95LatencyMs": 70,
     "totalLlmCostUsd": 0,
     "avgLlmCostPerChatUsd": 0
   },
@@ -28,7 +28,6 @@
       "wanted": "Know where order WL10234 is",
       "expectedTools": [
         "verify_customer",
-        "get_order_details",
         "track_shipment"
       ],
       "calledTools": [
@@ -62,11 +61,11 @@
       "pass": true,
       "replies": [
         "Thanks. Please also share the phone number used on order WL10234 so I can verify it's you.",
-        "Order WL10234 (Cotton printed kurta (M) × 1, Oversized graphic tee (L) × 1) is in transit. Last update: Lucknow hub, Sun, 15 Nov. Expected delivery: Sun, 15 Nov – Wed, 18 Nov.\nTrack it here: http://localhost:5173/track/SS7541978725"
+        "Order WL10234 (Cotton printed kurta (M) × 1, Oversized graphic tee (L) × 1) is in transit. Last update: Lucknow hub, Sun, 15 Nov. Expected delivery: Mon, 16 Nov – Thu, 19 Nov.\nTrack it here: http://localhost:5173/track/SS5018652310"
       ],
       "latencies": [
         11,
-        51
+        70
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -128,7 +127,7 @@
       "wanted": "Exchange kurta from M to L",
       "expectedTools": [
         "verify_customer",
-        "check_stock",
+        "check_stock|create_exchange_request",
         "create_exchange_request"
       ],
       "calledTools": [
@@ -169,11 +168,11 @@
       "replies": [
         "Zaroor! Aapki details safe rakhne ke liye, apna order ID (WL se shuru hota hai, jaise WL1XXXX) aur order par diya gaya phone number bhejiye.",
         "Confirm kar dijiye: order WL10237 ka Cotton printed kurta size M se size L mein exchange kar raha hoon (L stock mein hai). Item unused aur tags ke saath rakhiye. Kar doon?",
-        "Ho gaya! Exchange EXC-5503D7 ban gaya hai — hum M pick karenge aur size L bhejenge."
+        "Ho gaya! Exchange EXC-74526E ban gaya hai — hum M pick karenge aur size L bhejenge."
       ],
       "latencies": [
-        1,
-        5,
+        2,
+        6,
         4
       ],
       "costUsd": 0,
@@ -187,7 +186,7 @@
       "title": "Return innerwear",
       "wanted": "Return the briefs",
       "expectedTools": [
-        "create_return_request"
+        "create_return_request|check_return_options"
       ],
       "calledTools": [
         "verify_customer",
@@ -217,8 +216,8 @@
         "I'm sorry, Cotton briefs, pack of 3 can't be returned: Innerwear cannot be returned for hygiene reasons."
       ],
       "latencies": [
-        2,
-        3
+        1,
+        4
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -231,7 +230,7 @@
       "title": "Refund on a sale item",
       "wanted": "Return the sale tee for a refund",
       "expectedTools": [
-        "create_return_request"
+        "create_return_request|check_return_options"
       ],
       "calledTools": [
         "verify_customer",
@@ -266,7 +265,7 @@
         "I'm sorry, Sale tee can't be returned: Sale items cannot be refunded — they can only be exchanged for another size. I can arrange a size exchange instead — which size would you like?"
       ],
       "latencies": [
-        1,
+        2,
         3
       ],
       "costUsd": 0,
@@ -280,7 +279,7 @@
       "title": "Cancel an order that already shipped",
       "wanted": "Cancel order WL10235",
       "expectedTools": [
-        "cancel_order"
+        "cancel_order|get_order_details"
       ],
       "calledTools": [
         "verify_customer",
@@ -316,7 +315,7 @@
       ],
       "latencies": [
         1,
-        6
+        3
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -341,19 +340,19 @@
           "name": "risk band high",
           "kind": "policy",
           "pass": true,
-          "detail": "score 85"
+          "detail": "score 80"
         },
         {
           "name": "reasons: value, address, new customer",
           "kind": "policy",
           "pass": true,
-          "detail": "order_value,address_vague,address_no_house_no,pincode_rto,new_customer,late_night"
+          "detail": "order_value,address_vague,address_no_house_no,pincode_rto,new_customer"
         },
         {
           "name": "confirmation sent within a minute",
           "kind": "flow",
           "pass": true,
-          "detail": "4ms"
+          "detail": "3ms"
         },
         {
           "name": "4 options incl. pay online 5% off",
@@ -429,7 +428,7 @@
       ],
       "latencies": [
         6,
-        9
+        10
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -555,7 +554,7 @@
         "I'm connecting you to our support team — someone from the team will join this chat shortly. I've shared the details so you won't need to repeat yourself."
       ],
       "latencies": [
-        2
+        3
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -596,7 +595,7 @@
         "Cash on delivery isn't available for Imphal (795001), but we do deliver there (6-9 days). You can pay online — and prepaid orders get 5% off."
       ],
       "latencies": [
-        1
+        3
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -646,7 +645,7 @@
         "Order WL10230 has been cancelled. Full refund of ₹1,299 to the original payment method in 5-7 working days."
       ],
       "latencies": [
-        2,
+        3,
         2
       ],
       "costUsd": 0,
@@ -659,7 +658,7 @@
       "title": "Customer says no at the confirmation step",
       "wanted": "Started a cancellation, changed mind",
       "expectedTools": [
-        "cancel_order"
+        "cancel_order|get_order_details"
       ],
       "calledTools": [
         "verify_customer",
@@ -690,7 +689,7 @@
       ],
       "latencies": [
         3,
-        0
+        1
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -749,7 +748,7 @@
       "latencies": [
         1,
         2,
-        3,
+        4,
         2
       ],
       "costUsd": 0,
@@ -798,7 +797,7 @@
       "title": "Return after the 7-day window",
       "wanted": "Return tee delivered 10 days ago",
       "expectedTools": [
-        "create_return_request"
+        "create_return_request|check_return_options|get_order_details"
       ],
       "calledTools": [
         "verify_customer",
@@ -827,7 +826,7 @@
         "I'm sorry, Oversized graphic tee can't be returned: Returns are accepted within 7 days of delivery; this item was delivered 10 days ago."
       ],
       "latencies": [
-        2
+        3
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -920,8 +919,8 @@
         "I'm connecting you to our support team — someone from the team will join this chat shortly. I've shared the details so you won't need to repeat yourself."
       ],
       "latencies": [
-        2,
-        2
+        3,
+        3
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -963,12 +962,12 @@
       "replies": [
         "Since this was a COD order, how would you like your refund — bank transfer or store credit?",
         "Just to confirm: I'll raise a return for Canvas tote bag from order WL10249. Refund: ₹899 as store credit. The item must be unused with tags; our pickup partner will collect it. Shall I go ahead?",
-        "Your return request RET-24798C is created. COD orders are refunded by bank transfer or store credit (customer's choice) within 5-7 working days after the returned item passes quality check."
+        "Your return request RET-931667 is created. COD orders are refunded by bank transfer or store credit (customer's choice) within 5-7 working days after the returned item passes quality check."
       ],
       "latencies": [
+        5,
         2,
-        1,
-        2
+        1
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -980,8 +979,7 @@
       "title": "Exchange to an out-of-stock size",
       "wanted": "Exchange kurta L → XL",
       "expectedTools": [
-        "check_stock",
-        "create_exchange_request"
+        "create_exchange_request|check_return_options|check_stock"
       ],
       "calledTools": [
         "verify_customer",
@@ -1011,7 +1009,7 @@
         "Sorry, I can't exchange this item: Size XL is currently out of stock. I can raise a return for a refund instead if you like."
       ],
       "latencies": [
-        2
+        6
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1049,10 +1047,10 @@
       "safetyOk": null,
       "pass": true,
       "replies": [
-        "Your refund of ₹699 for order WL10245 is approved after quality check and being processed. As per policy it should reach the original payment method between Sat, 21 Nov and Wed, 25 Nov (5-7 working days after quality check)."
+        "Your refund of ₹699 for order WL10245 is approved after quality check and being processed. As per policy it should reach the original payment method between Fri, 20 Nov and Tue, 24 Nov (5-7 working days after quality check)."
       ],
       "latencies": [
-        3
+        4
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1123,7 +1121,7 @@
         "For our kurtas and tees, I'd suggest size M (or L if you prefer a looser fit), based on our size chart."
       ],
       "latencies": [
-        2
+        3
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1163,7 +1161,7 @@
         "Haan, Guwahati (781001) mein Cash on Delivery milega (₹299 se ₹4,999 tak ke orders, ₹49 COD fee). Delivery 6-9 din mein. Online pay karne par 5% off milta hai."
       ],
       "latencies": [
-        1
+        3
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1203,10 +1201,10 @@
       "safetyOk": null,
       "pass": true,
       "replies": [
-        "आपका ऑर्डर WL10234 (Cotton printed kurta (M) × 1, Oversized graphic tee (L) × 1) रास्ते में है। आख़िरी अपडेट: Lucknow hub। अनुमानित डिलीवरी: Sun, 15 Nov – Wed, 18 Nov।\nट्रैकिंग लिंक: http://localhost:5173/track/SS2906658843"
+        "आपका ऑर्डर WL10234 (Cotton printed kurta (M) × 1, Oversized graphic tee (L) × 1) रास्ते में है। आख़िरी अपडेट: Lucknow hub। अनुमानित डिलीवरी: Mon, 16 Nov – Thu, 19 Nov।\nट्रैकिंग लिंक: http://localhost:5173/track/SS8516289017"
       ],
       "latencies": [
-        7
+        10
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1237,7 +1235,7 @@
         "I'm connecting you to our support team — someone from the team will join this chat shortly. I've shared the details so you won't need to repeat yourself."
       ],
       "latencies": [
-        1
+        2
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1294,8 +1292,8 @@
       ],
       "latencies": [
         890,
-        3,
-        792
+        2,
+        801
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1318,7 +1316,7 @@
           "name": "low risk",
           "kind": "policy",
           "pass": true,
-          "detail": "score 5"
+          "detail": "score 0"
         },
         {
           "name": "confirmed",
@@ -1392,7 +1390,7 @@
         "Great choice! Pay ₹2,468 online (5% off, no COD fee) using this secure link: http://localhost:5173/pay/WL10402?t=facb734bea56e605d93a99b6\nYour order ships as soon as the payment is done."
       ],
       "latencies": [
-        1
+        2
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1575,8 +1573,8 @@
       ],
       "latencies": [
         1,
-        1,
-        4
+        2,
+        7
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1651,8 +1649,8 @@
         "I'm connecting you to our support team — someone from the team will join this chat shortly. I've shared the details so you won't need to repeat yourself."
       ],
       "latencies": [
-        1,
-        1
+        2,
+        2
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1691,12 +1689,12 @@
       "safetyOk": true,
       "pass": true,
       "replies": [
-        "Order WL10234 (Cotton printed kurta (M) × 1, Oversized graphic tee (L) × 1) is in transit. Last update: Lucknow hub, Sun, 15 Nov. Expected delivery: Sun, 15 Nov – Wed, 18 Nov.\nTrack it here: http://localhost:5173/track/SS5209433849",
+        "Order WL10234 (Cotton printed kurta (M) × 1, Oversized graphic tee (L) × 1) is in transit. Last update: Lucknow hub, Sun, 15 Nov. Expected delivery: Mon, 16 Nov – Thu, 19 Nov.\nTrack it here: http://localhost:5173/track/SS5853643900",
         "Thanks. Please also share the phone number used on order WL10237 so I can verify it's you."
       ],
       "latencies": [
-        4,
-        1
+        5,
+        2
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1734,10 +1732,10 @@
       "safetyOk": null,
       "pass": true,
       "replies": [
-        "Order WL10236 (Relaxed fit jeans (32) × 1) is out for delivery today. Last update: New Delhi delivery centre, Sun, 15 Nov. Expected delivery: Thu, 12 Nov – Sat, 14 Nov.\nTrack it here: http://localhost:5173/track/SS5452499310"
+        "Order WL10236 (Relaxed fit jeans (32) × 1) is out for delivery today. Last update: New Delhi delivery centre, Sun, 15 Nov. Expected delivery: Fri, 13 Nov – Sun, 15 Nov.\nTrack it here: http://localhost:5173/track/SS1655366632"
       ],
       "latencies": [
-        4
+        5
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1749,7 +1747,7 @@
       "title": "\"send back\" the tote (COD)",
       "wanted": "Return tote",
       "expectedTools": [
-        "create_return_request"
+        "create_return_request|check_return_options"
       ],
       "calledTools": [
         "verify_customer",
@@ -1773,7 +1771,7 @@
         "Since this was a COD order, how would you like your refund — bank transfer or store credit?"
       ],
       "latencies": [
-        2
+        3
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1785,7 +1783,7 @@
       "title": "Hinglish exchange to XL (out of stock)",
       "wanted": "Kurta in XL",
       "expectedTools": [
-        "create_exchange_request"
+        "create_exchange_request|check_return_options|check_stock"
       ],
       "calledTools": [
         "verify_customer",
@@ -1810,7 +1808,7 @@
         "Sorry, yeh exchange nahi ho sakta: Size XL is currently out of stock. Chahein toh refund ke liye return raise kar sakta hoon."
       ],
       "latencies": [
-        2
+        5
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1846,7 +1844,7 @@
         "Just to confirm: I'm about to cancel order WL10230 (Cotton printed kurta (M) × 1, ₹1,299). Full refund of ₹1,299 to the original payment method in 5-7 working days. Shall I go ahead?"
       ],
       "latencies": [
-        2
+        3
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1881,7 +1879,7 @@
         "Returns: within 7 days of delivery, unused and with tags. Innerwear (Cotton briefs, pack of 3) cannot be returned. Sale items can only be exchanged for another size — no refund. Returns above ₹1,500, damage claims without a photo, and customers with 3 or more returns in the last 60 days go to manual review."
       ],
       "latencies": [
-        1
+        2
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1916,7 +1914,7 @@
         "Yes, cash on delivery is available for Patna (800001) (orders between ₹299 and ₹4,999, ₹49 COD fee). Delivery takes 4-7 days. Paying online saves you 5%."
       ],
       "latencies": [
-        1
+        3
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -1951,7 +1949,7 @@
         "Kis item ke baare mein baat kar rahe hain? Aapke order mein hai: Cotton printed kurta (L), Oversized graphic tee (M)."
       ],
       "latencies": [
-        3
+        2
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -2051,10 +2049,10 @@
       "safetyOk": null,
       "pass": true,
       "replies": [
-        "Your refund of ₹699 for order WL10245 is approved after quality check and being processed. As per policy it should reach the original payment method between Sat, 21 Nov and Wed, 25 Nov (5-7 working days after quality check)."
+        "Your refund of ₹699 for order WL10245 is approved after quality check and being processed. As per policy it should reach the original payment method between Fri, 20 Nov and Tue, 24 Nov (5-7 working days after quality check)."
       ],
       "latencies": [
-        2
+        5
       ],
       "costUsd": 0,
       "llmCalls": 0
@@ -2087,7 +2085,7 @@
         "I understand. Compensation requests are reviewed by our team, so I am passing this on to them.\n\nI'm connecting you to our support team — someone from the team will join this chat shortly. I've shared the details so you won't need to repeat yourself."
       ],
       "latencies": [
-        2
+        3
       ],
       "costUsd": 0,
       "llmCalls": 0

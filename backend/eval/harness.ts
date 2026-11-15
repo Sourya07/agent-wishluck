@@ -71,7 +71,8 @@ export async function bootHarness(opts: { port?: number; llm?: boolean } = {}) {
     corpus(convId: string) {
       const tc = convs.getToolCalls(convId).map((c) => JSON.stringify(c.output));
       const msgs = convs.getMessages(convId).filter((m) => m.role === 'customer' || m.meta?.kind).map((m) => m.content);
-      return buildCorpus([...tc, ...msgs, POLICY_TEXT, config.frontendUrl]);
+      const today = new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(0, 10); // the agent is told today's date
+      return buildCorpus([...tc, ...msgs, POLICY_TEXT, config.frontendUrl, today]);
     },
     ungrounded,
     async close() { server.close(); },

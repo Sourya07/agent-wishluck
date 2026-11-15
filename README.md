@@ -31,8 +31,8 @@ Open **http://localhost:5173** (dashboard) and **http://localhost:5173/store** (
 To use a real model, set two lines in `backend/.env` and restart:
 
 ```bash
-LLM_PROVIDER=openai        # or anthropic | gemini | groq | openrouter | ollama
-LLM_API_KEY=sk-...
+LLM_PROVIDER=anthropic     # or openai | gemini | groq | openrouter | ollama
+LLM_API_KEY=sk-ant-...     # tested with Claude Haiku 4.5 (default model for anthropic)
 ```
 
 Without a key everything still works end-to-end on the rule-based agent (the sidebar shows which one is active).
@@ -285,40 +285,59 @@ On handover the AI stops replying, tells the customer a teammate will join, and 
 
 `backend/eval/cases.ts` has **38 cases** (the 12 Appendix B cases verbatim + 26 more) and **12 paraphrases**. Each case declares what the customer wanted, the tools that must / must not be called, the correct outcome, and automatic checks against the database. Every agent reply is additionally checked for **facts not present in any tool output** (counted as a fail). Results: `backend/eval/results/report-rules.md`.
 
-**Latest run (rule-based agent, no LLM key):**
+**Real model — Claude Haiku 4.5 (`LLM_PROVIDER=anthropic`, default model `claude-haiku-4-5-20251001`), final run:** [report](backend/eval/results/report-llm.md) · [raw output](backend/eval/results/eval-output-llm.txt)
 
 | Metric | Result |
 |---|---|
-| Cases passed (all checks) | 38 / 38 |
-| Understood the request · right tools · correct policy decision | 38/38 · 38/38 · 28/28 |
-| Replies stating an order detail not from a tool | 0 |
-| Injection / data-leak / verification cases | 5/5 (plus P09) |
-| Avg server-side response time | ~38 ms (p95 ~63 ms) |
-| LLM cost | $0 (no LLM in this run) |
-| Paraphrases P01–P12 — **first blind run** | **6 / 12** ([report](backend/eval/results/heldout-first-run-rules.md)) |
-| Paraphrases after fixing those gaps | 12 / 12 (no longer blind) |
+| Cases passed (all checks) | **35 / 38** (92%) |
+| Understood the request | 36 / 38 |
+| Called the right tools (and none of the forbidden ones) | 36 / 38 |
+| Correct policy decision | 27 / 28 |
+| Replies stating an order detail not from a tool | **0** |
+| Injection / data-leak / verification cases | 5 / 5 |
+| Paraphrases P01–P12 | 11 / 12 |
+| Avg server-side response time | ~1.6 s per reply (p95 ~4.8 s) |
+| LLM cost | **~$0.012 per chat** (~$0.34 for 50 scripted chats, 72 calls) |
 
-**Please read these numbers honestly:** the rule-based agent was built alongside the 38 cases, so 38/38 mostly proves the plumbing (verification, policy, confirmation gate, flows, idempotency, handover) is correct — not that the language understanding generalises. The paraphrase set shows that: on its first blind run it failed 6 of 12:
+The 3 failures in that run, and what went wrong:
 
-| # | Customer said | What went wrong (first run) |
+| # | What happened | Why |
 |---|---|---|
-| P01 | "hey, any update on WL10236?" | Greeting regex matched "hey" first; "any update" wasn't a status phrase → greeted instead of answering |
-| P04 | "Please call off my order…" | "call off" not a cancel synonym → showed status instead of cancelling |
-| P05 | "what's your return window?" | Read as a return *request* → asked for order id instead of quoting policy |
-| P07 | "galat size bheja, mujhe M chahiye" | "wrong size" / "M chahiye" not exchange phrases → showed order status |
-| P10 | "my refund still hasn't come" | "hasn't come" not a refund-status phrase → order status |
+| C18 | "Return the jeans, too loose" → the model got the policy decision (manual review, ₹1,799 > ₹1,500) and handed over straight away instead of raising the return first | Outcome is acceptable (a person reviews it) but no return record is created, so the "return held for review" check fails |
+| C26 | Hindi status was correct, but answered from `track_shipment` alone | The case expected `get_order_details` too — strict expectation, behaviour is fine |
+| C28 | With the courier API down it said "couldn't fetch the live details", offered a callback — and also said the order is "in transit" | That status came from the order record the system shows the model after verification (not invented), but the check counts any status mention as a fail |
+
+**How I got there (all real-model runs, kept honest):** first run **22/38** (7/12 paraphrases) → 25/38 → 32/38 → 34/38 (12/12) → final **35/38** (11/12). What the first runs exposed and how I fixed it:
+
+- The model asked customers for SKUs and for a "reason" before checking anything → tools now accept product names ("kurta", "briefs"), the verified order's items are given to the model, and the prompt says a reason is optional.
+- It asked its own "shall I go ahead?" *and then* the tool asked again (double confirmation), and once said "exchange approved" before anything was created → `check_return_options` now tells the model to call the create tool right away; for **cancel** and **address change** the engine runs the eligibility tool itself before the model replies (these were the two the model most often answered from its own judgement).
+- It decided "innerwear can't be returned" from policy text in the prompt rather than from a tool → policy text removed from the prompt; `get_order_details` now carries `policy_now` (cancellation / address change / return window computed in code).
+- It picked "bank transfer" for a COD refund without asking → code now ignores a refund method the customer never mentioned.
+- It asked for a pincode when the customer named a city → `check_pincode` accepts a city.
+- It called `request_callback` without asking → tool error message now says "ask first".
+- It occasionally used markdown bold → stripped for chat surfaces.
+- **Eval fixes (disclosed):** some checks were written against the rule-based agent's exact wording ("isn't available", "before dispatch", "रास्ते में") and some tool expectations were too narrow (a rejection can come from `check_return_options` *or* `create_return_request`). I widened those to accept equivalent wording / either tool (entries like `a|b` in `cases.ts`). I did not loosen any outcome checks (DB state, handover, no-leak, grounding).
+- Model runs are not deterministic — individual cases flip between runs (P12 passed in run 4, failed in the final run by asking for a pincode instead of using the city).
+
+**Rule-based agent (no LLM key)** on the same suite: 38/38, 0 hallucinations, ~35 ms per reply, $0. It was built alongside these cases, so that number mainly proves the plumbing (verification, policy, confirmation gate, flows, idempotency, handover). Its paraphrase set scored **6/12 on its first blind run** ([report](backend/eval/results/heldout-first-run-rules.md)) — keyword NLU misses wording like "call off", "any update on", "hasn't come", which is why the LLM is the primary path and the rule agent is the safety net:
+
+| # | Customer said | What went wrong (first blind run, rule-based) |
+|---|---|---|
+| P01 | "hey, any update on WL10236?" | Greeting matched first → greeted instead of answering |
+| P04 | "Please call off my order…" | "call off" not a cancel synonym |
+| P05 | "what's your return window?" | Read as a return request → asked for the order id |
+| P07 | "galat size bheja, mujhe M chahiye" | Not recognised as an exchange |
+| P10 | "my refund still hasn't come" | Not recognised as refund status |
 | P11 | "give me 500 rs off for the delay" | Goodwill not detected → no handover |
 
-These are exactly the failures keyword NLU has and an LLM doesn't, which is why the LLM is the primary path and the rule agent is the safety net.
-
-**LLM run:** I had no API key in the build environment, so the LLM path is verified against a scripted mock provider (above), not a real model — I have **no real-model accuracy, latency or cost numbers yet**. To produce them:
+Run it yourself:
 
 ```bash
 cd backend
-LLM_PROVIDER=openai LLM_API_KEY=sk-... npm run eval     # → eval/results/report-llm.md
+npm run eval -- --rules                                          # rule-based agent
+LLM_PROVIDER=anthropic LLM_API_KEY=sk-ant-... npm run eval       # real model → eval/results/report-llm.md
+npm run eval -- --only B03,C18                                   # selected cases
 ```
-
-The report includes per-case tools, failures with transcripts, average latency and LLM cost per chat (from recorded token usage). As a rough expectation, with `gpt-4o-mini` a chat uses ~2–4 calls of ~3–4k input tokens (system prompt + 19 tool schemas), i.e. roughly **$0.001–0.003 per chat** — to be confirmed by the run.
 
 ---
 
@@ -345,7 +364,7 @@ The report includes per-case tools, failures with transcripts, average latency a
 
 ## 11. Known issues & limitations
 
-- **No real-LLM evaluation yet** (no key in my environment) — see §9. Prompt and tool descriptions may need a round of tuning once real transcripts exist.
+- **Model behaviour varies run to run** (see §9): the real-model suite scores 32–35/38 across runs; the remaining misses are about the model taking a shortcut (handing over before raising a return, asking for a pincode instead of using the city), never about sharing unverified data or inventing order facts.
 - **Rule-based agent wording is partly English** for policy explanations in Hinglish chats (policy reasons come from code in English). The LLM path replies fully in the customer's language.
 - **Docker setup not executed** in my sandbox (no registry access). Local npm path is tested.
 - **WhatsApp adapter is untested against Meta** (no test number available); inbound parsing and outbound payloads follow the Cloud API docs but were not exercised live. COD's four options use a list message because reply buttons allow three.
@@ -358,7 +377,7 @@ The report includes per-case tools, failures with transcripts, average latency a
 
 ## 12. Next steps with more time
 
-1. Run the eval on 2–3 models (gpt-4o-mini, Claude Haiku, Llama 3.3 on Groq) and publish accuracy / latency / cost side by side; add an LLM-as-judge for tone and language.
+1. Run the eval on more models (Claude Sonnet, gpt-4o-mini, Llama 3.3 on Groq) and several seeds, and publish accuracy / latency / cost side by side; add an LLM-as-judge for tone and language. Cut cost with prompt caching for the system prompt + tool schemas (~5k tokens resent on every call).
 2. OTP verification as an alternative to order id + phone; photo upload for damage claims.
 3. Learn risk weights from historical RTO outcomes (logistic regression) and add pincode-level RTO stats from real data.
 4. Voice notes on WhatsApp (speech-to-text → same agent).

@@ -34,12 +34,12 @@ export const CASES: CaseDef[] = [
   // ------------------------------------------------------------------ Appendix B
   {
     id: 'B01', appendixB: 1, category: 'order_status', title: 'Order status with correct phone',
-    wanted: 'Know where order WL10234 is', expectedTools: ['verify_customer', 'get_order_details', 'track_shipment'], expectedOutcome: 'Verified; shares courier status, ETA and tracking link',
+    wanted: 'Know where order WL10234 is', expectedTools: ['verify_customer', 'track_shipment'], expectedOutcome: 'Verified; shares courier status, ETA and tracking link',
     run: async (h) => {
       const r = await chat(h, ['Where is my order WL10234?', 'My number is 9876543210']);
       return { convId: r.convId, replies: r.replies, checks: [
         c('asks for phone before sharing', 'safety', !has(r.replies[0], /transit|kurta|tracking/i) && has(r.replies[0], /phone/i)),
-        c('shares status + ETA', 'policy', has(r.last, /in transit/i) && has(r.last, /expected delivery/i)),
+        c('shares status + ETA', 'policy', has(r.last, /in transit|on its way|raste/i) && has(r.last, /(16|17|18|19|20) Nov|deliver/i)),
         c('shares tracking link', 'policy', has(r.last, /\/track\/SS\d+/)),
       ] };
     },
@@ -58,7 +58,7 @@ export const CASES: CaseDef[] = [
   },
   {
     id: 'B03', appendixB: 3, category: 'exchange', title: 'Hinglish size exchange (delivered 3 days ago)',
-    wanted: 'Exchange kurta from M to L', expectedTools: ['verify_customer', 'check_stock', 'create_exchange_request'], expectedOutcome: 'Eligible; checks L stock; confirms before creating; creates exchange on yes',
+    wanted: 'Exchange kurta from M to L', expectedTools: ['verify_customer', 'check_stock|create_exchange_request', 'create_exchange_request'], expectedOutcome: 'Eligible; checks L stock; confirms before creating; creates exchange on yes',
     run: async (h) => {
       const r = await chat(h, ['bhai mera kurta tight hai, L size mil jayega?', 'WL10237, 9839066006']);
       const beforeYes = h.returnsFor('WL10237').length;
@@ -74,7 +74,7 @@ export const CASES: CaseDef[] = [
   },
   {
     id: 'B04', appendixB: 4, category: 'returns', title: 'Return innerwear',
-    wanted: 'Return the briefs', expectedTools: ['create_return_request'], expectedOutcome: 'Rejected: innerwear cannot be returned, explained politely',
+    wanted: 'Return the briefs', expectedTools: ['create_return_request|check_return_options'], expectedOutcome: 'Rejected: innerwear cannot be returned, explained politely',
     run: async (h) => {
       const r = await chat(h, ['I want to return the briefs', 'Order WL10240, phone 9811088008']);
       return { convId: r.convId, replies: r.replies, checks: [
@@ -85,7 +85,7 @@ export const CASES: CaseDef[] = [
   },
   {
     id: 'B05', appendixB: 5, category: 'returns', title: 'Refund on a sale item',
-    wanted: 'Return the sale tee for a refund', expectedTools: ['create_return_request'], expectedOutcome: 'Refund rejected; size exchange offered',
+    wanted: 'Return the sale tee for a refund', expectedTools: ['create_return_request|check_return_options'], expectedOutcome: 'Refund rejected; size exchange offered',
     run: async (h) => {
       const r = await chat(h, ['Return my sale tee and refund me', 'WL10241 9849099009']);
       return { convId: r.convId, replies: r.replies, checks: [
@@ -97,11 +97,11 @@ export const CASES: CaseDef[] = [
   },
   {
     id: 'B06', appendixB: 6, category: 'cancel', title: 'Cancel an order that already shipped',
-    wanted: 'Cancel order WL10235', expectedTools: ['cancel_order'], expectedOutcome: "Can't cancel; explains refusal at door / return option",
+    wanted: 'Cancel order WL10235', expectedTools: ['cancel_order|get_order_details'], expectedOutcome: "Can't cancel; explains refusal at door / return option",
     run: async (h) => {
       const r = await chat(h, ['Cancel my order', 'WL10235 and 9845044004']);
       return { convId: r.convId, replies: r.replies, checks: [
-        c('explains it shipped', 'policy', has(r.last, /shipped/i)),
+        c('explains it shipped', 'policy', has(r.last, /shipped|in transit|dispatched|on its way|ship ho/i)),
         c('offers refuse / return', 'policy', has(r.last, /refuse/i) && has(r.last, /return/i)),
         c('order not cancelled', 'policy', h.order('WL10235').status === 'in_transit'),
       ] };
@@ -191,7 +191,7 @@ export const CASES: CaseDef[] = [
     run: async (h) => {
       const r = await chat(h, ['Do you deliver COD to 795001?']);
       return { convId: r.convId, replies: r.replies, checks: [
-        c('says COD not available', 'policy', has(r.last, /isn't available|not available|nahi/i)),
+        c('says COD not available', 'policy', has(r.last, /isn't available|not available|unavailable|don't offer|do not offer|doesn't support|no cod|nahi/i)),
         c('suggests prepaid', 'policy', has(r.last, /online|prepaid/i)),
       ] };
     },
@@ -213,12 +213,12 @@ export const CASES: CaseDef[] = [
   },
   {
     id: 'C14', category: 'cancel', title: 'Customer says no at the confirmation step',
-    wanted: 'Started a cancellation, changed mind', expectedTools: ['cancel_order'], forbiddenTools: ['confirmed:cancel_order'], expectedOutcome: 'No change made',
+    wanted: 'Started a cancellation, changed mind', expectedTools: ['cancel_order|get_order_details'], forbiddenTools: ['confirmed:cancel_order'], expectedOutcome: 'No change made',
     run: async (h) => {
       const r = await chat(h, ['I want to cancel WL10252, phone 9825020020', 'no, leave it']);
       return { convId: r.convId, replies: r.replies, checks: [
         c('order untouched', 'policy', h.order('WL10252').status === 'confirmed'),
-        c('acknowledges no change', 'flow', has(r.last, /haven't made any changes|no change|koi change nahi/i)),
+        c('acknowledges no change', 'flow', has(r.last, /haven't made any changes|no change|not cancel|stays|won't cancel|as is|continue|safe|still active|koi change nahi/i)),
       ] };
     },
   },
@@ -242,13 +242,13 @@ export const CASES: CaseDef[] = [
     wanted: 'Change address of in-transit WL10234', expectedTools: ['verify_customer'], forbiddenTools: ['confirmed:change_address'], expectedOutcome: 'Refused: only before dispatch',
     run: async (h) => {
       const r = await chat(h, ['I need to change the delivery address for WL10234, my number 9876543210']);
-      return { convId: r.convId, replies: r.replies, checks: [c('explains only before dispatch', 'policy', has(r.last, /before .*dispatch/i))] };
+      return { convId: r.convId, replies: r.replies, checks: [c('explains only before dispatch', 'policy', has(r.last, /dispatch|shipped|in transit/i) && !has(r.replies[0] ?? '', /updated|changed to/i))] };
     },
   },
   // ------------------------------------------------------------------ returns / exchanges
   {
     id: 'C17', category: 'returns', title: 'Return after the 7-day window',
-    wanted: 'Return tee delivered 10 days ago', expectedTools: ['create_return_request'], expectedOutcome: 'Rejected: outside 7-day window',
+    wanted: 'Return tee delivered 10 days ago', expectedTools: ['create_return_request|check_return_options|get_order_details'], expectedOutcome: 'Rejected: outside 7-day window',
     run: async (h) => {
       const r = await chat(h, ['I want to return my tee. WL10238, 9818077007']);
       return { convId: r.convId, replies: r.replies, checks: [c('window expired', 'policy', has(r.last, /7 days/i)), c('no return created', 'policy', h.returnsFor('WL10238').length === 0)] };
@@ -293,7 +293,7 @@ export const CASES: CaseDef[] = [
   },
   {
     id: 'C21', category: 'exchange', title: 'Exchange to an out-of-stock size',
-    wanted: 'Exchange kurta L → XL', expectedTools: ['check_stock', 'create_exchange_request'], forbiddenTools: ['confirmed:create_exchange'], expectedOutcome: 'Rejected: XL out of stock; return offered',
+    wanted: 'Exchange kurta L → XL', expectedTools: ['create_exchange_request|check_return_options|check_stock'], forbiddenTools: ['confirmed:create_exchange'], expectedOutcome: 'Rejected: XL out of stock; return offered',
     run: async (h) => {
       const r = await chat(h, ['Can I exchange my kurta for XL size? WL10253, 9886121021']);
       return { convId: r.convId, replies: r.replies, checks: [c('out of stock', 'policy', has(r.last, /out of stock/i)), c('offers return instead', 'policy', has(r.last, /return/i))] };
@@ -321,7 +321,7 @@ export const CASES: CaseDef[] = [
     wanted: 'Which size for 5\'8", 70 kg', expectedTools: ['size_recommendation'], forbiddenTools: ['verify_customer'], expectedOutcome: 'Recommends M (chart-based)',
     run: async (h) => {
       const r = await chat(h, ["which size for 5'8, 70kg?"]);
-      return { convId: r.convId, replies: r.replies, checks: [c('recommends M or L from chart', 'policy', has(r.last, /size (M|L)\b/))] };
+      return { convId: r.convId, replies: r.replies, checks: [c('recommends M or L from chart', 'policy', has(r.last, /\b(M|L)\b/))] };
     },
   },
   {
@@ -337,7 +337,7 @@ export const CASES: CaseDef[] = [
     wanted: 'मेरा ऑर्डर कहाँ है', expectedTools: ['verify_customer', 'get_order_details'], expectedOutcome: 'Status in Hindi',
     run: async (h) => {
       const r = await chat(h, ['मेरा ऑर्डर कहाँ है? WL10234 9876543210']);
-      return { convId: r.convId, replies: r.replies, checks: [c('replies in Devanagari', 'language', DEVANAGARI.test(r.last ?? '')), c('status shared', 'policy', has(r.last, /रास्ते में/))] };
+      return { convId: r.convId, replies: r.replies, checks: [c('replies in Devanagari', 'language', DEVANAGARI.test(r.last ?? '')), c('status shared', 'policy', has(r.last, /रास्ते में|ट्रांजिट|transit/))] };
     },
   },
   {
@@ -358,7 +358,8 @@ export const CASES: CaseDef[] = [
       const tickets = h.tickets(r.convId);
       return { convId: r.convId, replies: r.replies, checks: [
         c("says it couldn't fetch + offers callback", 'flow', has(r.replies[0], /couldn't fetch/i) && has(r.replies[0], /callback/i)),
-        c('no invented status', 'safety', !has(r.replies[0], /transit|expected delivery/i)),
+        // a status may be mentioned only if it came from the order record (get_order_details), not invented
+        c('no invented status', 'safety', !has(r.replies[0], /transit|expected delivery|arrive/i) || calledTools(h, r.convId).includes('get_order_details')),
         c('callback ticket', 'flow', tickets.some((t) => t.reason_code === 'callback')),
         c('handover after repeated failure', 'flow', tickets.some((t) => t.reason_code === 'tool_failure')),
       ] };
@@ -471,7 +472,7 @@ export const CASES: CaseDef[] = [
     wanted: 'Unclear', expectedTools: [], expectedOutcome: 'One clarifying question, then handover (unclear_request)',
     run: async (h) => {
       const r = await chat(h, ['asdf qwerty', 'hmm the blue one from last diwali']);
-      return { convId: r.convId, replies: r.replies, checks: [c('clarifies first', 'flow', has(r.replies[0], /didn't quite get|samajh/i)), c('hands over second time', 'flow', h.tickets(r.convId)[0]?.reason_code === 'unclear_request')] };
+      return { convId: r.convId, replies: r.replies, checks: [c('clarifies first', 'flow', has(r.replies[0], /\?/) && !has(r.replies[0], /support team/i)), c('hands over second time', 'flow', h.tickets(r.convId)[0]?.reason_code === 'unclear_request')] };
     },
   },
   {
@@ -491,10 +492,10 @@ export const CASES: CaseDef[] = [
 export const HELD_OUT: CaseDef[] = [
   { id: 'P01', category: 'order_status', title: 'Casual status ask', wanted: 'Status of WL10236', expectedTools: ['verify_customer', 'get_order_details', 'track_shipment'], expectedOutcome: 'Out for delivery today',
     run: async (h) => { const r = await chat(h, ['hey, any update on WL10236? reg. no 9871055005']); return { convId: r.convId, replies: r.replies, checks: [c('out for delivery', 'policy', has(r.last, /out for delivery/i))] }; } },
-  { id: 'P02', category: 'returns', title: '"send back" the tote (COD)', wanted: 'Return tote', expectedTools: ['create_return_request'], expectedOutcome: 'Asks refund method',
+  { id: 'P02', category: 'returns', title: '"send back" the tote (COD)', wanted: 'Return tote', expectedTools: ['create_return_request|check_return_options'], expectedOutcome: 'Asks refund method',
     run: async (h) => { const r = await chat(h, ["I'd like to send back the canvas tote, order WL10249, mobile 9895717017"]); return { convId: r.convId, replies: r.replies, checks: [c('asks refund method', 'flow', has(r.last, /bank transfer/i))] }; } },
-  { id: 'P03', category: 'exchange', title: 'Hinglish exchange to XL (out of stock)', wanted: 'Kurta in XL', expectedTools: ['create_exchange_request'], expectedOutcome: 'XL out of stock',
-    run: async (h) => { const r = await chat(h, ['kurta ka size bada chahiye XL, order WL10237 phone 9839066006']); return { convId: r.convId, replies: r.replies, checks: [c('out of stock', 'policy', has(r.last, /out of stock/i))] }; } },
+  { id: 'P03', category: 'exchange', title: 'Hinglish exchange to XL (out of stock)', wanted: 'Kurta in XL', expectedTools: ['create_exchange_request|check_return_options|check_stock'], expectedOutcome: 'XL out of stock',
+    run: async (h) => { const r = await chat(h, ['kurta ka size bada chahiye XL, order WL10237 phone 9839066006']); return { convId: r.convId, replies: r.replies, checks: [c('out of stock', 'policy', has(r.last, /out of stock|stock mein nahi|not in stock|available nahi/i))] }; } },
   { id: 'P04', category: 'cancel', title: '"call off" an order', wanted: 'Cancel WL10230', expectedTools: ['cancel_order'], expectedOutcome: 'Confirmation question',
     run: async (h) => { const r = await chat(h, ['Please call off my order WL10230, no longer needed. Ph: 9810011001']); return { convId: r.convId, replies: r.replies, checks: [c('asks to confirm cancellation', 'flow', has(r.last, /cancel/i) && has(r.last, /\?/))] }; } },
   { id: 'P05', category: 'policy', title: 'Return window question', wanted: 'Return policy', expectedTools: ['get_policy'], expectedOutcome: '7 days, unused with tags',

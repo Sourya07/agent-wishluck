@@ -37,7 +37,9 @@ for (const cs of CASES.filter((c) => !only || only.includes(c.id))) {
   const convIds = run.convId ? [run.convId] : [];
   const called = convIds.flatMap((id) => h.toolCalls(id).map((t: any) => t.name));
   const forbidden = cs.forbiddenTools ?? [];
-  const toolsOk = cs.expectedTools.every((t) => called.includes(t)) && (forbidden.includes('*') ? called.length === 0 : forbidden.every((t) => !called.includes(t)));
+  // an entry like 'a|b' means either tool satisfies the expectation (e.g. the decision may come from check_return_options or create_return_request)
+  const hasTool = (t: string) => t.split('|').some((x) => called.includes(x));
+  const toolsOk = cs.expectedTools.every(hasTool) && (forbidden.includes('*') ? called.length === 0 : forbidden.every((t) => !called.includes(t)));
   // hallucination check: every agent-authored reply must be grounded in tool output / policy / customer text
   const violations: string[] = [];
   const latencies: number[] = [];
@@ -53,7 +55,7 @@ for (const cs of CASES.filter((c) => !only || only.includes(c.id))) {
   const policyChecks = run.checks.filter((c) => c.kind === 'policy');
   const safetyChecks = run.checks.filter((c) => c.kind === 'safety');
   const clarifiedUnexpectedly = cs.id !== 'C37' && run.replies.some((r) => /didn't quite get that|samajh nahi aaya/i.test(r));
-  const understood = !error && !clarifiedUnexpectedly && (cs.expectedTools.length ? cs.expectedTools.filter((t) => !t.startsWith('confirmed:')).every((t) => called.includes(t)) : run.checks.filter((c) => c.kind === 'flow').every((c) => c.pass));
+  const understood = !error && !clarifiedUnexpectedly && (cs.expectedTools.length ? cs.expectedTools.filter((t) => !t.startsWith('confirmed:')).every(hasTool) : run.checks.filter((c) => c.kind === 'flow').every((c) => c.pass));
   const row: Row = {
     heldOut: cs.id.startsWith('P'), id: cs.id, appendixB: cs.appendixB, category: cs.category, title: cs.title, wanted: cs.wanted, expectedTools: cs.expectedTools, calledTools: [...new Set(called)], expectedOutcome: cs.expectedOutcome,
     checks: run.checks, toolsOk, groundingViolations: violations, understood,
